@@ -1,11 +1,19 @@
 <template>
-  <el-container style="border: 1px solid #eee">
+  <el-container style="border: 1px solid #eee;height: 100%">
     <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
-      <el-menu :default-openeds="['1']">
-        <el-submenu index="1" v-for="item in connectPool">
-          <template slot="title"><i class="el-icon-message"></i>{{ item.connectionName }}</template>
 
-          <el-menu-item index="1-4-1">db10</el-menu-item>
+      <el-menu
+              class="el-menu-vertical-demo">
+        <el-submenu index="1" v-for="item in connectPool" :key="item.connectionName">
+          <template slot="title">
+            <i class="el-icon-location"></i>
+            <span>{{ item.connectionName }}</span>
+          </template>
+
+          <el-menu-item :index="'1-'+item" v-for="item in 16" :key="item" @click="onSelectDB">
+            <i class="el-icon-menu"></i>
+            <span slot="title">{{ "db"+(item-1) }}</span>
+          </el-menu-item>
         </el-submenu>
       </el-menu>
     </el-aside>
@@ -20,8 +28,8 @@
       </el-main>
     </el-container>
 
-    <el-dialog title="连接redis" :visible.sync="dialogConnectVisible">
-      <el-form :model="connectForm">
+    <el-dialog title="连接redis" :visible.sync="dialogConnectVisible" top="0">
+      <el-form inline label-position="left" label-width="80px">
         <el-form-item label="连接名" >
           <el-input v-model="connectForm.connectionName" auto-complete="off"></el-input>
         </el-form-item>
@@ -90,12 +98,17 @@
         this.connectPool.push(Object.assign({}, this.connectForm, { handler }))
         this.connectForm = this.defaultConnectConfig
         this.onCloseConnectDialog()
+      },
+      onSelectDB(index) {
+        console.log(1111)
+        console.log(index)
       }
     }
   }
 </script>
 
 <style scoped>
+
   .el-header {
     background-color: #B3C0D1;
     color: #333;
@@ -105,4 +118,15 @@
   .el-aside {
     color: #333;
   }
+
+  .text {
+    font-size: 14px;
+  }
+
+  .item {
+    padding: 18px 0;
+    text-align: center;
+    background: #fff;
+  }
+
 </style>

@@ -4,15 +4,15 @@
 
       <el-menu
               class="el-menu-vertical-demo">
-        <el-submenu index="1" v-for="item in connectPool" :key="item.connectionName">
-          <template slot="title">
+        <el-submenu index="1" v-for="(item, handlerIndex) in connectPool" :key="item.connectionName" class="connect-item">
+          <template slot="title" >
             <i class="el-icon-location"></i>
             <span>{{ item.connectionName }}</span>
           </template>
 
-          <el-menu-item :index="'1-'+item" v-for="item in 16" :key="item" @click="onSelectDB">
+          <el-menu-item :index="'1-'+dbIndex" v-for="dbIndex in item.dbCount" :key="dbIndex" @click="onSelectDB(handlerIndex, dbIndex-1)" class="db-item">
             <i class="el-icon-menu"></i>
-            <span slot="title">{{ "db"+(item-1) }}</span>
+            <span slot="title">{{ "db"+(dbIndex-1) }}</span>
           </el-menu-item>
         </el-submenu>
       </el-menu>
@@ -23,7 +23,7 @@
         <el-button type="primary" icon="el-icon-plus" @click="onOpenConnectDialog">连接</el-button>
       </el-header>
 
-      <el-main>
+      <el-main v-loading="loading">
 
       </el-main>
     </el-container>
@@ -62,6 +62,7 @@
     name: "index",
     data() {
       return {
+        loading: false,
         dialogConnectVisible: false,
         connectPool: [],
         connectForm: {
@@ -80,7 +81,13 @@
       }
     },
     created() {
-      this.connectForm = this.defaultConnectConfig
+      // this.connectForm = this.defaultConnectConfig
+      this.connectForm = {
+        connectionName: 'test',
+        host: 'r-bp16391e6e9a1224.redis.rds.aliyuncs.com',
+        port: '6379',
+        password: 'ecarxdbIMhi9m'
+      }
     },
     methods: {
       onOpenConnectDialog() {
@@ -93,15 +100,24 @@
         const handler = new Redis(this.connectForm)
 
         handler.config('get', 'databases').then(response => {
+          const dbCount = parseInt(response[1])
+          this.connectPool.push(Object.assign({}, this.connectForm, { handler, dbCount }))
+          this.connectForm = this.defaultConnectConfig
+          this.onCloseConnectDialog()
+        })
+
+      },
+      onSelectDB(handlerIndex, dbIndex) {
+        console.log(dbIndex)
+        const handler = this.connectPool[handlerIndex].handler
+        handler.select(dbIndex).then(response => {
           console.log(response)
         })
-        this.connectPool.push(Object.assign({}, this.connectForm, { handler }))
-        this.connectForm = this.defaultConnectConfig
-        this.onCloseConnectDialog()
-      },
-      onSelectDB(index) {
-        console.log(1111)
-        console.log(index)
+        this.loading = true
+        handler.keys('*').then(response => {
+          this.loading = false
+          console.log(response)
+        })
       }
     }
   }
@@ -127,6 +143,14 @@
     padding: 18px 0;
     text-align: center;
     background: #fff;
+  }
+  .connect-item {
+    height: 30px;
+    line-height: 30px;
+  }
+  .db-item {
+    height: 25px;
+    line-height: 25px;
   }
 
 </style>

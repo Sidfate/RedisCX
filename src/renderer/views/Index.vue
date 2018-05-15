@@ -23,8 +23,34 @@
         <el-button type="primary" icon="el-icon-plus" @click="onOpenConnectDialog">连接</el-button>
       </el-header>
 
-      <el-main v-loading="loading">
+      <el-main>
+        <div class="main-wrapper" v-if="selectedHandler">
+          <div class="filter-container">
+            <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
+            </el-input>
+            <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button>
+          </div>
 
+          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row style="margin: 20px 0;">
+            <el-table-column label="key">
+              <template slot-scope="scope">
+                {{scope.row}}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100">
+              <template slot-scope="scope">
+                <el-button type="text" size="mini" >查询</el-button>
+
+                <el-button type="text" size="mini" >删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div class="pagination-container">
+            <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-sizes="[10,20,30, 50]" :page-size="listQuery.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="total">
+            </el-pagination>
+          </div>
+        </div>
       </el-main>
     </el-container>
 
@@ -77,14 +103,22 @@
           port: '6379',
           password: ''
         },
-        viewPassword: false
+        selectedHandler: null,
+        keys: [],
+        viewPassword: false,
+        listQuery: {
+          pageIndex: 1,
+          pageSize: 20,
+          key: ''
+        },
+        total: 0
       }
     },
     created() {
       // this.connectForm = this.defaultConnectConfig
       this.connectForm = {
-        connectionName: 'test',
-        host: 'r-bp16391e6e9a1224.redis.rds.aliyuncs.com',
+        connectionName: 'development',
+        host: 'r-bp1a0aeca50643a4.redis.rds.aliyuncs.com',
         port: '6379',
         password: 'ecarxdbIMhi9m'
       }
@@ -99,24 +133,44 @@
       onConnect() {
         const handler = new Redis(this.connectForm)
 
+        console.log(handler.getBuiltinCommands())
         handler.config('get', 'databases').then(response => {
           const dbCount = parseInt(response[1])
           this.connectPool.push(Object.assign({}, this.connectForm, { handler, dbCount }))
           this.connectForm = this.defaultConnectConfig
           this.onCloseConnectDialog()
         })
-
       },
       onSelectDB(handlerIndex, dbIndex) {
-        console.log(dbIndex)
-        const handler = this.connectPool[handlerIndex].handler
+        this.selectedHandler = this.connectPool[handlerIndex]
+        const handler = this.selectedHandler.handler
         handler.select(dbIndex).then(response => {
           console.log(response)
+          this.fetchData()
         })
+      },
+      handleFilter() {
+        this.fetchData()
+      },
+      handleSizeChange(val) {
+        this.listQuery.pageSize = val
+        this.fetchData()
+      },
+      handleCurrentChange(val) {
+        this.listQuery.pageIndex = val
+        this.fetchData()
+      },
+      fetchData() {
         this.loading = true
-        handler.keys('*').then(response => {
-          this.loading = false
+
+        this.selectedHandler.handler.sendCommand('SCAN 0 MATCH * COUNT 100').then(response => {
           console.log(response)
+        })
+
+        this.selectedHandler.handler.keys('*').then(response => {
+          this.loading = false
+          this.total = response.length
+          this.keys = response
         })
       }
     }

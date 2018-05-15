@@ -81,13 +81,7 @@
       }
     },
     created() {
-      // this.connectForm = this.defaultConnectConfig
-      this.connectForm = {
-        connectionName: 'test',
-        host: 'r-bp16391e6e9a1224.redis.rds.aliyuncs.com',
-        port: '6379',
-        password: 'ecarxdbIMhi9m'
-      }
+      this.connectForm = this.defaultConnectConfig
     },
     methods: {
       onOpenConnectDialog() {

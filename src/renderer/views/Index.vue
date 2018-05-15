@@ -4,8 +4,8 @@
 
       <el-menu
               class="el-menu-vertical-demo">
-        <el-submenu index="1" v-for="(item, handlerIndex) in connectPool" :key="item.connectionName" class="connect-item">
-          <template slot="title" >
+        <el-submenu index="1" v-for="(item, handlerIndex) in connectPool" :key="item.connectionName" >
+          <template slot="title" class="connect-item">
             <i class="el-icon-location"></i>
             <span>{{ item.connectionName }}</span>
           </template>
@@ -143,10 +143,6 @@
     padding: 18px 0;
     text-align: center;
     background: #fff;
-  }
-  .connect-item {
-    height: 30px;
-    line-height: 30px;
   }
   .db-item {
     height: 25px;

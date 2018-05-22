@@ -12,7 +12,7 @@
           <template v-if="activeHandler.hasOwnProperty(handlerIndex.toLocaleString())">
           <el-menu-item :index="''+handlerIndex+'-'+dbIndex" v-for="dbIndex in activeHandler[handlerIndex].dbCount" :key="dbIndex" @click="onSelectDB(handlerIndex, dbIndex-1)" class="db-item">
             <i class="el-icon-menu"></i>
-            <span slot="title">{{ "db"+(dbIndex-1) }}</span>
+            <span slot="title">{{ 'db'+(dbIndex-1) }}</span>
           </el-menu-item>
           </template>
         </el-submenu>
@@ -27,14 +27,18 @@
       <el-main>
         <div class="main-wrapper" v-if="selectedHandler">
           <div class="filter-container">
+            <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 15px;">
+              <el-breadcrumb-item>{{ selectedHandler.connect.connectionName }}</el-breadcrumb-item>
+              <el-breadcrumb-item>{{ 'db'+selectedHandler.dbIndex+'('+keys.length+')' }}</el-breadcrumb-item>
+            </el-breadcrumb>
             <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
             </el-input>
             <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button>
             <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
-            <span>当前</span>
+
           </div>
 
-          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row stripe style="margin: 20px 0;" @expand-change="onShowValue">
+          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row style="margin: 20px 0;" @expand-change="onShowValue">
             <el-table-column label="key">
               <template slot-scope="scope">
                 {{scope.row}}
@@ -46,6 +50,20 @@
               </template>
             </el-table-column>
           </el-table>
+        </div>
+        <div v-else>
+          <el-card class="box-card">
+            <div slot="header" class="clearfix">
+              <span>RedisCX</span>
+              <!--<el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>-->
+            </div>
+            <div class="text item">
+              Created by Sidfate
+            </div>
+            <div class="text item">
+              <a href="https://github.com/Sidfate/redisCX">github</a>
+            </div>
+          </el-card>
         </div>
       </el-main>
     </el-container>
@@ -115,35 +133,18 @@
     },
     created() {
       // this.connectForm = this.defaultConnectConfig
-      const devConnect = {
-        connectionName: 'development',
-        host: 'r-bp1a0aeca50643a4.redis.rds.aliyuncs.com',
+      const localConnect = {
+        connectionName: 'test',
+        host: 'localhost',
         port: '6379',
-        password: 'ecarxdbIMhi9m'
-      }
-      const testConnect = {
-        connectionName: 'testing',
-        host: 'r-bp16391e6e9a1224.redis.rds.aliyuncs.com',
-        port: '6379',
-        password: 'ecarxdbIMhi9m'
-      }
-      const stageConnect = {
-        connectionName: 'staging',
-        host: 'r-bp18eb6820a07ab4.redis.rds.aliyuncs.com',
-        port: '6379',
-        password: 'ecarxdbIMhi9m'
-      }
-      const prodConnect = {
-        connectionName: 'production',
-        host: 'r-bp1827c2d130a154.redis.rds.aliyuncs.com',
-        port: '6379',
-        password: 'ecarxdbIMhi9m'
+        password: ''
       }
 
       this.connectList.push(devConnect)
       this.connectList.push(testConnect)
       this.connectList.push(stageConnect)
       this.connectList.push(prodConnect)
+      this.connectList.push(localConnect)
       this.connectForm = this.defaultConnectConfig
     },
     methods: {
@@ -181,8 +182,9 @@
       // 选择db，获取所有keys
       async onSelectDB(handlerIndex, dbIndex) {
         const handler = this.activeHandler[handlerIndex].handler
+        const connect = this.connectList[handlerIndex]
         await handler.select(dbIndex)
-        this.selectedHandler = Object.assign({}, {handlerIndex, dbIndex, handler})
+        this.selectedHandler = Object.assign({}, {handlerIndex, dbIndex, handler, connect})
         await this.fetchData()
       },
       // 获取key的值

@@ -34,7 +34,7 @@
             <span>当前</span>
           </div>
 
-          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row stripe style="margin: 20px 0;" @expand-change="onShowValue">
+          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row style="margin: 20px 0;" @expand-change="onShowValue">
             <el-table-column label="key">
               <template slot-scope="scope">
                 {{scope.row}}

@@ -38,7 +38,7 @@
 
           </div>
 
-          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row style="margin: 20px 0;" @expand-change="onShowValue">
+          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row style="margin: 20px 0;">
             <el-table-column label="key">
               <template slot-scope="scope">
                 {{scope.row}}
@@ -51,17 +51,23 @@
             </el-table-column>
           </el-table>
         </div>
-        <div v-else>
-          <el-card class="box-card">
+        <div v-else class="dashboard">
+          <el-card class="box-card" style="width: 65%;margin: 0 auto">
             <div slot="header" class="clearfix">
               <span>RedisCX</span>
-              <!--<el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>-->
+              <el-button type="text" @click="onOpenGithub" style="float: right;padding: 3px 0;">Github</el-button>
+            </div>
+
+            <div class="text item">
+              Version <span style="color: #F56C6C;">Beta1.0</span>
             </div>
             <div class="text item">
-              Created by Sidfate
+              Created by <el-button type="text" @click="onOpenPersonalSite">Sidfate</el-button>
             </div>
             <div class="text item">
-              <a href="https://github.com/Sidfate/redisCX">github</a>
+              <el-tag>electron</el-tag>
+              <el-tag>element-ui</el-tag>
+              <el-tag type="success">vue</el-tag>
             </div>
           </el-card>
         </div>
@@ -92,6 +98,7 @@
 
 <script>
   import Redis from 'ioredis'
+  import { shell } from 'electron'
 
   export default {
     name: "index",
@@ -140,10 +147,6 @@
         password: ''
       }
 
-      this.connectList.push(devConnect)
-      this.connectList.push(testConnect)
-      this.connectList.push(stageConnect)
-      this.connectList.push(prodConnect)
       this.connectList.push(localConnect)
       this.connectForm = this.defaultConnectConfig
     },
@@ -244,6 +247,12 @@
       },
       onCloseConnectDialog() {
         this.dialogConnectVisible = false
+      },
+      onOpenPersonalSite() {
+        shell.openExternal('https://sidfate.com/')
+      },
+      onOpenGithub() {
+        shell.openExternal('https://github.com/Sidfate/redisCX')
       }
     }
   }
@@ -273,6 +282,10 @@
   .db-item {
     height: 25px;
     line-height: 25px;
+  }
+
+  .dashboard .item {
+    padding: 10px 0;
   }
 
 </style>

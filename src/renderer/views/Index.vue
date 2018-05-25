@@ -26,30 +26,50 @@
 
       <el-main>
         <div class="main-wrapper" v-if="selectedHandler">
-          <div class="filter-container">
-            <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 15px;">
-              <el-breadcrumb-item>{{ selectedHandler.connect.connectionName }}</el-breadcrumb-item>
-              <el-breadcrumb-item>{{ 'db'+selectedHandler.dbIndex+'('+keys.length+')' }}</el-breadcrumb-item>
-            </el-breadcrumb>
-            <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
-            </el-input>
-            <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button>
-            <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
+          <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 15px;">
+            <el-breadcrumb-item>{{ selectedHandler.connect.connectionName }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ 'db'+selectedHandler.dbIndex+'('+keys.length+')' }}</el-breadcrumb-item>
+          </el-breadcrumb>
 
-          </div>
+          <el-tabs v-model="activeKey" closable @edit="handleTabsEdit">
+            <el-tab-pane label="所有键" name="keys" v-loading.body="loadingKeys" element-loading-text="Loading">
+              <div class="filter-container">
+                <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
+                </el-input>
+                <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button>
+                <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
+              </div>
 
-          <el-table :data="keys" v-loading.body="loading" element-loading-text="Loading" fit highlight-current-row style="margin: 20px 0;">
-            <el-table-column label="key">
-              <template slot-scope="scope">
-                {{scope.row}}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="100">
-              <template slot-scope="scope">
-                <el-button type="text" size="mini" >删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+              <el-table :data="keys" fit highlight-current-row style="margin: 20px 0;" @expand-change="onShowValue">
+                <el-table-column label="key">
+                  <template slot-scope="scope">
+                    {{scope.row}}
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="100">
+                  <template slot-scope="scope">
+                    <el-button type="text" size="mini" @click="onShowValue(scope.row)">查询</el-button>
+                    <el-button type="text" size="mini" >删除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-tab-pane>
+            <el-tab-pane v-for="(item, key) in selectedKeys" :label="key" :name="key" :key="key"
+                         v-loading.body="loadingValue" element-loading-text="Loading"
+            >
+              <div >
+                <div class="value-header">
+                  <span><el-tag>STRING</el-tag> {{ key }}</span>
+                  <el-button-group style="float: right">
+                    <el-button type="primary" icon="el-icon-edit"></el-button>
+                    <el-button type="warning" icon="el-icon-refresh" @click="onRefreshKey(key)"></el-button>
+                    <el-button type="danger" icon="el-icon-delete"></el-button>
+                  </el-button-group>
+                </div>
+                <!--<codemirror v-model="item.value"></codemirror>-->
+              </div>
+            </el-tab-pane>
+          </el-tabs>
         </div>
         <div v-else class="dashboard">
           <el-card class="box-card" style="width: 65%;margin: 0 auto">
@@ -104,7 +124,8 @@
     name: "index",
     data() {
       return {
-        loading: false,
+        loadingKeys: false,
+        loadingValue: false,
         dialogConnectVisible: false,
         connectList: [],
         activeHandler: {},
@@ -127,7 +148,9 @@
           cursor: '0',
           count: '10000'
         },
-        total: 0
+        total: 0,
+        activeKey: 'keys',
+        selectedKeys: {}
       }
     },
     watch: {
@@ -140,14 +163,14 @@
     },
     created() {
       // this.connectForm = this.defaultConnectConfig
-      const localConnect = {
-        connectionName: 'test',
-        host: 'localhost',
-        port: '6379',
-        password: ''
-      }
-
-      this.connectList.push(localConnect)
+      // const localConnect = {
+      //   connectionName: 'test',
+      //   host: 'localhost',
+      //   port: '6379',
+      //   password: ''
+      // }
+      //
+      // this.connectList.push(localConnect)
       this.connectForm = this.defaultConnectConfig
     },
     methods: {
@@ -191,7 +214,7 @@
         await this.fetchData()
       },
       // 获取key的值
-      async onShowValue(key, expandedRows) {
+      async onShowValue(key) {
         const handler = this.selectedHandler.handler
 
         const type = await handler.type(key)
@@ -209,6 +232,18 @@
         }
 
         const value = await handler[func](key)
+        console.log(value)
+        this.activeKey = key
+
+        this.$set(this.selectedKeys, key, { key, value })
+      },
+      async onDeleteKey() {
+
+      },
+      async onRefreshKey(key) {
+        this.loadingValue = true
+        await this.onShowValue(key)
+        this.loadingValue = false
       },
       // 断开连接
       async onDisconnect(index) {
@@ -221,7 +256,7 @@
         this.fetchData()
       },
       async fetchData() {
-        this.loading = true
+        this.loadingKeys = true
         const handler = this.selectedHandler.handler
         let allKeys = []
         let cursor = 0
@@ -238,7 +273,7 @@
           await handler.sendCommand(scanAllKeys)
         }while (cursor !== 0)
 
-        this.loading = false
+        this.loadingKeys = false
         this.total = allKeys.length
         this.keys = allKeys
       },
@@ -253,6 +288,34 @@
       },
       onOpenGithub() {
         shell.openExternal('https://github.com/Sidfate/redisCX')
+      },
+      handleTabsEdit(targetName, action) {
+        if (action === 'add') {
+          let newTabName = ++this.tabIndex + '';
+          this.editableTabs.push({
+            title: 'New Tab',
+            name: newTabName,
+            content: 'New Tab content'
+          });
+          this.editableTabsValue = newTabName;
+        }
+        if (action === 'remove') {
+          let tabs = this.editableTabs;
+          let activeName = this.editableTabsValue;
+          if (activeName === targetName) {
+            tabs.forEach((tab, index) => {
+              if (tab.name === targetName) {
+                let nextTab = tabs[index + 1] || tabs[index - 1];
+                if (nextTab) {
+                  activeName = nextTab.name;
+                }
+              }
+            });
+          }
+
+          this.editableTabsValue = activeName;
+          this.editableTabs = tabs.filter(tab => tab.name !== targetName);
+        }
       }
     }
   }
@@ -286,6 +349,9 @@
 
   .dashboard .item {
     padding: 10px 0;
+  }
+  .value-header {
+    margin-bottom: 20px;
   }
 
 </style>

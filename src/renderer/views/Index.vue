@@ -1,6 +1,6 @@
 <template>
   <el-container style="border: 1px solid #eee;height: 100%">
-    <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
+    <el-aside width="180px" style="background-color: rgb(238, 241, 246)">
       <el-menu class="el-menu-vertical-demo" @open="onConnect">
         <el-submenu :index="handlerIndex.toLocaleString()" v-for="(item, handlerIndex) in connectList" :key="item.connectionName" >
           <template slot="title" class="connect-item">
@@ -24,66 +24,118 @@
         <el-button type="primary" icon="el-icon-plus" @click="onOpenConnectDialog">连接</el-button>
       </el-header>
 
-      <el-main>
+      <el-main v-loading.body="loadingKeys" element-loading-text="连接中...">
         <div class="main-wrapper" v-if="selectedHandler">
           <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 15px;">
             <el-breadcrumb-item>{{ selectedHandler.connect.connectionName }}</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ 'db'+selectedHandler.dbIndex+'('+keys.length+')' }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ 'db'+selectedHandler.dbIndex+'('+selectedHandler.dbSize+')' }}</el-breadcrumb-item>
           </el-breadcrumb>
 
-
           <el-tabs v-model="activeKey" closable @edit="handleTabsEdit">
-            <el-tab-pane label="所有键" name="keys" v-loading.body="loadingKeys" element-loading-text="Loading">
+            <el-tab-pane label="所有键" name="keys">
               <div class="filter-container">
                 <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
+                  <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
                 </el-input>
-                <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button>
-                <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter">刷新</el-button>
+                <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter" style="float: right"></el-button>
               </div>
 
-              <el-table :data="keys" fit highlight-current-row style="margin: 20px 0;" @expand-change="onShowValue">
+              <el-table :data="keys" fit highlight-current-row style="margin: 20px 0;" >
                 <el-table-column label="key">
                   <template slot-scope="scope">
-                    {{scope.row}}
+                    <el-button type="text" @click="onShowValue(scope.row)">{{scope.row}}</el-button>
                   </template>
                 </el-table-column>
                 <el-table-column label="操作" width="100">
                   <template slot-scope="scope">
-                    <el-button type="text" size="mini" @click="onShowValue(scope.row)">查询</el-button>
-                    <el-button type="text" size="mini" >删除</el-button>
+                    <el-button type="text" size="mini" style="color: #F56C6C;">删除</el-button>
                   </template>
                 </el-table-column>
               </el-table>
+
+              <div class="pagination-container">
+                <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="total, prev, pager, next, jumper" :total="total">
+                </el-pagination>
+              </div>
             </el-tab-pane>
-            <el-tab-pane v-for="(item, key) in selectedKeys" :label="key" :name="key" :key="key"
+            <el-tab-pane v-for="(item, index) in selectedKeys" :label="item.key | getKeyLabel" :name="item.key" :key="item.key"
                          v-loading.body="loadingValue" element-loading-text="Loading"
             >
               <div >
                 <div class="value-header">
-                  <span><el-tag>STRING</el-tag> {{ key }}</span>
+                  <div>
+                    <el-tag type="success">{{ item.type.toUpperCase() }}</el-tag> {{ item.key }}
+                    <span style="float: right">{{ "TTL: " + item.ttl }}</span>
+                  </div>
                   <el-button-group style="float: right">
                     <el-button type="primary" icon="el-icon-edit"></el-button>
-                    <el-button type="warning" icon="el-icon-refresh" @click="onRefreshKey(key)"></el-button>
+                    <el-button type="warning" icon="el-icon-refresh" @click="onRefreshKey(item.key)"></el-button>
                     <el-button type="danger" icon="el-icon-delete"></el-button>
                   </el-button-group>
                 </div>
-                <codemirror v-model="item.value"></codemirror>
+                <template v-if="item.type === 'string'">
+                  <el-input
+                          type="textarea"
+                          :autosize="{ minRows: 2, maxRows: 4}"
+                          placeholder="请输入内容"
+                          v-model="item.value" style="margin-top: 20px;">
+                  </el-input>
+                </template>
+                <template v-else-if="item.type === 'hash'">
+                  <el-table :data="item.value" fit highlight-current-row style="margin: 20px 0;" >
+                    <el-table-column label="row" width="100">
+                      <template slot-scope="scope">
+                        {{ scope.$index+1 }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="key" width="300">
+                      <template slot-scope="scope">
+                        {{ scope.row.key }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="value">
+                      <template slot-scope="scope">
+                        {{ scope.row.value }}
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </template>
+                <template v-else-if="item.type === 'set'">
+                  <el-table :data="item.value" fit highlight-current-row style="margin: 20px 0;" >
+                    <el-table-column label="row" width="100">
+                      <template slot-scope="scope">
+                        {{ scope.$index+1 }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="value">
+                      <template slot-scope="scope">
+                        {{ scope.row }}
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </template>
+                <!--<codemirror v-model="item.value"></codemirror>-->
               </div>
             </el-tab-pane>
           </el-tabs>
-
         </div>
-        <div v-else>
-          <el-card class="box-card">
+        <div v-else class="dashboard">
+          <el-card class="box-card" style="width: 65%;margin: 0 auto">
             <div slot="header" class="clearfix">
               <span>RedisCX</span>
-              <!--<el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>-->
+              <el-button type="text" @click="onOpenGithub" style="float: right;padding: 3px 0;">Github</el-button>
+            </div>
+
+            <div class="text item">
+              Version <span style="color: #F56C6C;">亿咖通专用版 Beta1.0</span>
             </div>
             <div class="text item">
-              Created by Sidfate
+              Created by <el-button type="text" @click="onOpenPersonalSite">Sidfate</el-button>
             </div>
             <div class="text item">
-              <a href="https://github.com/Sidfate/redisCX">github</a>
+              <el-tag>electron</el-tag>
+              <el-tag>element-ui</el-tag>
+              <el-tag type="success">vue</el-tag>
             </div>
           </el-card>
         </div>
@@ -114,6 +166,7 @@
 
 <script>
   import Redis from 'ioredis'
+  import { shell } from 'electron'
 
   export default {
     name: "index",
@@ -138,15 +191,28 @@
         },
         selectedHandler: null,
         keys: [],
+        allKeys: [],
         listQuery: {
           key: '',
           cursor: '0',
-          count: '10000'
+          count: '3000',
+          pageSize: 3000,
+          pageIndex: 1
         },
         total: 0,
         activeKey: 'keys',
-        selectedKeys: {}
+        selectedKeys: []
       }
+    },
+    filters: {
+      getKeyLabel(key) {
+        let label = key
+        if(key.length > 10) {
+          label = key.substring(0, 10)+'...'
+        }
+
+        return label
+      },
     },
     watch: {
       activeHandler() {
@@ -158,14 +224,7 @@
     },
     created() {
       // this.connectForm = this.defaultConnectConfig
-      const localConnect = {
-        connectionName: 'test',
-        host: 'localhost',
-        port: '6379',
-        password: ''
-      }
 
-      this.connectList.push(localConnect)
       this.connectForm = this.defaultConnectConfig
     },
     methods: {
@@ -205,40 +264,54 @@
         const handler = this.activeHandler[handlerIndex].handler
         const connect = this.connectList[handlerIndex]
         await handler.select(dbIndex)
-        this.selectedHandler = Object.assign({}, {handlerIndex, dbIndex, handler, connect})
+        const dbSize = await handler.dbsize()
+        this.selectedHandler = Object.assign({}, { handlerIndex, dbIndex, handler, connect, dbSize })
         await this.fetchData()
+
+        this.selectedKeys = []
+        this.activeKey = 'keys'
       },
       // 获取key的值
       async onShowValue(key) {
+        this.loadingValue = true
         const handler = this.selectedHandler.handler
 
         const type = await handler.type(key)
-        let func = null
+        console.log(type)
+        let value = null
+        const ttl = await handler.ttl(key)
         switch (type) {
           case 'hash':
-            func = 'hget'
+            value = []
+            const hKeys = await handler.hkeys(key)
+            for (let hKey of hKeys) {
+              value.push({key: hKey, value: await handler.hget(key, hKey)})
+            }
             break
           case 'string':
-            func = 'get'
+            value = await handler.get(key)
             break
+          case 'set':
+            value = await handler.smembers(key)
+            break;
           default:
             this.$message.warning('无法打开指定的key值')
             return
         }
 
-        const value = await handler[func](key)
-        console.log(value)
         this.activeKey = key
-
-        this.$set(this.selectedKeys, key, { key, value })
+        if(!this.selectedKeys.some(  (v,i)  =>  (v.key === key) )) {
+          this.selectedKeys.push({key, value, type, ttl})
+        }
+        this.loadingValue = false
       },
+      // 删除key
       async onDeleteKey() {
 
       },
+      // 刷新key的值
       async onRefreshKey(key) {
-        this.loadingValue = true
         await this.onShowValue(key)
-        this.loadingValue = false
       },
       // 断开连接
       async onDisconnect(index) {
@@ -263,14 +336,16 @@
           scanAllKeys.promise.then(result => {
             console.log(result)
             cursor = parseInt(result[0])
-            allKeys = allKeys.concat(result[1])
+            allKeys.push(result[1])
           })
           await handler.sendCommand(scanAllKeys)
         }while (cursor !== 0)
 
+        console.log(allKeys)
         this.loadingKeys = false
-        this.total = allKeys.length
-        this.keys = allKeys
+        this.total = this.selectedHandler.dbSize
+        this.keys = allKeys[0]
+        this.allKeys = allKeys
       },
       onOpenConnectDialog() {
         this.dialogConnectVisible = true
@@ -278,32 +353,37 @@
       onCloseConnectDialog() {
         this.dialogConnectVisible = false
       },
+      onOpenPersonalSite() {
+        shell.openExternal('https://sidfate.com/')
+      },
+      onOpenGithub() {
+        shell.openExternal('https://github.com/Sidfate/redisCX')
+      },
+      handleCurrentChange(val) {
+        this.loadingKeys = true
+        this.listQuery.pageIndex = val
+        this.keys = this.allKeys[val-1]
+        this.loadingKeys = false
+      },
       handleTabsEdit(targetName, action) {
-        if (action === 'add') {
-          let newTabName = ++this.tabIndex + '';
-          this.editableTabs.push({
-            title: 'New Tab',
-            name: newTabName,
-            content: 'New Tab content'
-          });
-          this.editableTabsValue = newTabName;
-        }
         if (action === 'remove') {
-          let tabs = this.editableTabs;
-          let activeName = this.editableTabsValue;
+          let tabs = this.selectedKeys
+          let activeName = this.activeKey
           if (activeName === targetName) {
             tabs.forEach((tab, index) => {
-              if (tab.name === targetName) {
-                let nextTab = tabs[index + 1] || tabs[index - 1];
+              if (tab.key === targetName) {
+                let nextTab = tabs[index + 1] || tabs[index - 1]
                 if (nextTab) {
-                  activeName = nextTab.name;
+                  activeName = nextTab.key
+                }else {
+                  activeName = 'keys'
                 }
               }
-            });
+            })
           }
 
-          this.editableTabsValue = activeName;
-          this.editableTabs = tabs.filter(tab => tab.name !== targetName);
+          this.activeKey = activeName
+          this.selectedKeys = tabs.filter(tab => tab.key !== targetName)
         }
       }
     }
@@ -336,6 +416,9 @@
     line-height: 25px;
   }
 
+  .dashboard .item {
+    padding: 10px 0;
+  }
   .value-header {
     margin-bottom: 20px;
   }

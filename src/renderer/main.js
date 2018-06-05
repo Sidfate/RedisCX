@@ -6,7 +6,6 @@ import store from './store'
 
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
-import LazyRender from 'vue-lazy-render'
 // import VueCodeMirror from 'vue-codemirror-lite'
 
 // Vue.use(VueCodeMirror)
@@ -14,8 +13,6 @@ Vue.use(ElementUI)
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.config.productionTip = false
-
-Vue.use(LazyRender)
 
 /* eslint-disable no-new */
 new Vue({

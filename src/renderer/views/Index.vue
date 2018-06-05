@@ -40,7 +40,8 @@
                 <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter" style="float: right"></el-button>
               </div>
 
-              <el-table :data="keys" fit highlight-current-row style="margin: 20px 0;" >
+              <template v-if="isShowAllKeys">
+              <el-table :data="keys" fit highlight-current-row style="margin: 20px 0;">
                 <el-table-column label="key">
                   <template slot-scope="scope">
                     <el-button type="text" @click="onShowValue(scope.row)">{{scope.row}}</el-button>
@@ -48,7 +49,7 @@
                 </el-table-column>
                 <el-table-column label="操作" width="100">
                   <template slot-scope="scope">
-                    <el-button type="text" size="mini" style="color: #F56C6C;">删除</el-button>
+                    <el-button type="text" size="mini" style="color: #F56C6C;" @click="onDeleteKey(scope.row)">删除</el-button>
                   </template>
                 </el-table-column>
               </el-table>
@@ -57,6 +58,7 @@
                 <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="total, prev, pager, next, jumper" :total="total">
                 </el-pagination>
               </div>
+              </template>
             </el-tab-pane>
             <el-tab-pane v-for="(item, index) in selectedKeys" :label="item.key | getKeyLabel" :name="item.key" :key="item.key"
                          v-loading.body="loadingValue" element-loading-text="Loading"
@@ -70,7 +72,7 @@
                   <el-button-group style="float: right">
                     <el-button type="primary" icon="el-icon-edit"></el-button>
                     <el-button type="warning" icon="el-icon-refresh" @click="onRefreshKey(item.key)"></el-button>
-                    <el-button type="danger" icon="el-icon-delete"></el-button>
+                    <el-button type="danger" icon="el-icon-delete" @click="onDeleteKey(item.key)"></el-button>
                   </el-button-group>
                 </div>
                 <template v-if="item.type === 'string'">
@@ -183,6 +185,7 @@
           port: '',
           password: ''
         },
+        isShowAllKeys: false,
         defaultConnectConfig: {
           connectionName: 'test',
           host: 'localhost',
@@ -224,14 +227,6 @@
     },
     created() {
       // this.connectForm = this.defaultConnectConfig
-      const localConnect = {
-        connectionName: 'dev',
-        host: 'r-bp1a0aeca50643a4.redis.rds.aliyuncs.com',
-        port: '6379',
-        password: 'ecarxdbIMhi9m'
-      }
-
-      this.connectList.push(localConnect)
 
       this.connectForm = this.defaultConnectConfig
     },
@@ -314,8 +309,17 @@
         this.loadingValue = false
       },
       // 删除key
-      async onDeleteKey() {
+      async onDeleteKey(key) {
+        const handler = this.selectedHandler.handler
+        await handler.del(key)
 
+        const index = this.keys.indexOf(key)
+        if (index > -1) {
+          this.keys.splice(index, 1)
+        }
+
+        this.handleTabsEdit(key, 'remove')
+        this.$message.success('删除成功')
       },
       // 刷新key的值
       async onRefreshKey(key) {
@@ -332,6 +336,10 @@
         this.fetchData()
       },
       async fetchData() {
+        if(!this.listQuery.key) {
+          return
+        }
+        this.isShowAllKeys = true
         this.loadingKeys = true
         const handler = this.selectedHandler.handler
         let allKeys = []

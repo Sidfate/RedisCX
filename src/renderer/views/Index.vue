@@ -216,6 +216,14 @@
     },
     created() {
       // this.connectForm = this.defaultConnectConfig
+      const localConnect = {
+        connectionName: 'dev',
+        host: 'r-bp1a0aeca50643a4.redis.rds.aliyuncs.com',
+        port: '6379',
+        password: 'ecarxdbIMhi9m'
+      }
+
+      this.connectList.push(localConnect)
 
       this.connectForm = this.defaultConnectConfig
     },

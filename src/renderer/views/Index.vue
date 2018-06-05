@@ -24,15 +24,15 @@
         <el-button type="primary" icon="el-icon-plus" @click="onOpenConnectDialog">连接</el-button>
       </el-header>
 
-      <el-main>
+      <el-main v-loading.body="loadingKeys" element-loading-text="连接中...">
         <div class="main-wrapper" v-if="selectedHandler">
           <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 15px;">
             <el-breadcrumb-item>{{ selectedHandler.connect.connectionName }}</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ 'db'+selectedHandler.dbIndex+'('+keys.length+')' }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ 'db'+selectedHandler.dbIndex+'('+selectedHandler.dbSize+')' }}</el-breadcrumb-item>
           </el-breadcrumb>
 
           <el-tabs v-model="activeKey" closable @edit="handleTabsEdit">
-            <el-tab-pane label="所有键" name="keys" v-loading.body="loadingKeys" element-loading-text="Loading">
+            <el-tab-pane label="所有键" name="keys">
               <div class="filter-container">
                 <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
                   <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
@@ -52,6 +52,11 @@
                   </template>
                 </el-table-column>
               </el-table>
+
+              <div class="pagination-container">
+                <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="total, prev, pager, next, jumper" :total="total">
+                </el-pagination>
+              </div>
             </el-tab-pane>
             <el-tab-pane v-for="(item, index) in selectedKeys" :label="item.key | getKeyLabel" :name="item.key" :key="item.key"
                          v-loading.body="loadingValue" element-loading-text="Loading"
@@ -59,7 +64,7 @@
               <div >
                 <div class="value-header">
                   <div>
-                    <el-tag>{{ item.type.toUpperCase() }}</el-tag> {{ item.key }}
+                    <el-tag type="success">{{ item.type.toUpperCase() }}</el-tag> {{ item.key }}
                     <span style="float: right">{{ "TTL: " + item.ttl }}</span>
                   </div>
                   <el-button-group style="float: right">
@@ -122,7 +127,7 @@
             </div>
 
             <div class="text item">
-              Version <span style="color: #F56C6C;">Beta1.0</span>
+              Version <span style="color: #F56C6C;">亿咖通专用版 Beta1.0</span>
             </div>
             <div class="text item">
               Created by <el-button type="text" @click="onOpenPersonalSite">Sidfate</el-button>
@@ -186,10 +191,13 @@
         },
         selectedHandler: null,
         keys: [],
+        allKeys: [],
         listQuery: {
           key: '',
           cursor: '0',
-          count: '10000'
+          count: '3000',
+          pageSize: 3000,
+          pageIndex: 1
         },
         total: 0,
         activeKey: 'keys',
@@ -264,7 +272,8 @@
         const handler = this.activeHandler[handlerIndex].handler
         const connect = this.connectList[handlerIndex]
         await handler.select(dbIndex)
-        this.selectedHandler = Object.assign({}, {handlerIndex, dbIndex, handler, connect})
+        const dbSize = await handler.dbsize()
+        this.selectedHandler = Object.assign({}, { handlerIndex, dbIndex, handler, connect, dbSize })
         await this.fetchData()
 
         this.selectedKeys = []
@@ -335,14 +344,16 @@
           scanAllKeys.promise.then(result => {
             console.log(result)
             cursor = parseInt(result[0])
-            allKeys = allKeys.concat(result[1])
+            allKeys.push(result[1])
           })
           await handler.sendCommand(scanAllKeys)
         }while (cursor !== 0)
 
+        console.log(allKeys)
         this.loadingKeys = false
-        this.total = allKeys.length
-        this.keys = allKeys
+        this.total = this.selectedHandler.dbSize
+        this.keys = allKeys[0]
+        this.allKeys = allKeys
       },
       onOpenConnectDialog() {
         this.dialogConnectVisible = true
@@ -355,6 +366,12 @@
       },
       onOpenGithub() {
         shell.openExternal('https://github.com/Sidfate/redisCX')
+      },
+      handleCurrentChange(val) {
+        this.loadingKeys = true
+        this.listQuery.pageIndex = val
+        this.keys = this.allKeys[val-1]
+        this.loadingKeys = false
       },
       handleTabsEdit(targetName, action) {
         if (action === 'remove') {

@@ -129,7 +129,7 @@
             </div>
 
             <div class="text item">
-              Version <span style="color: #F56C6C;">亿咖通专用版 Beta1.0</span>
+              Version <span style="color: #F56C6C;">亿咖通专用版 Beta 0.1.0</span>
             </div>
             <div class="text item">
               Created by <el-button type="text" @click="onOpenPersonalSite">Sidfate</el-button>
@@ -187,7 +187,7 @@
         },
         isShowAllKeys: false,
         defaultConnectConfig: {
-          connectionName: 'test',
+          connectionName: '',
           host: 'localhost',
           port: '6379',
           password: ''
@@ -198,8 +198,8 @@
         listQuery: {
           key: '',
           cursor: '0',
-          count: '3000',
-          pageSize: 3000,
+          count: '10000',
+          pageSize: 1000,
           pageIndex: 1
         },
         total: 0,
@@ -344,22 +344,24 @@
         const handler = this.selectedHandler.handler
         let allKeys = []
         let cursor = 0
+        let total = 0
         let key = this.listQuery.key ? '*' + this.listQuery.key + '*' : '*'
         const count = this.listQuery.count
 
         do {
           let scanAllKeys = new Redis.Command('scan', [cursor, 'Match', key, 'COUNT', count], {replyEncoding: 'utf8'})
           scanAllKeys.promise.then(result => {
-            console.log(result)
             cursor = parseInt(result[0])
+            console.log(cursor)
+            total += result[1].length
             allKeys.push(result[1])
           })
           await handler.sendCommand(scanAllKeys)
         }while (cursor !== 0)
 
-        console.log(allKeys)
         this.loadingKeys = false
-        this.total = this.selectedHandler.dbSize
+        // this.total = this.selectedHandler.dbSize
+        this.total = total
         this.keys = allKeys[0]
         this.allKeys = allKeys
       },

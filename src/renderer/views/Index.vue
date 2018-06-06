@@ -129,7 +129,7 @@
             </div>
 
             <div class="text item">
-              Version <span style="color: #F56C6C;">亿咖通专用版 Beta1.0</span>
+              Version <span style="color: #F56C6C;">亿咖通专用版 Beta 0.1.0</span>
             </div>
             <div class="text item">
               Created by <el-button type="text" @click="onOpenPersonalSite">Sidfate</el-button>
@@ -187,7 +187,7 @@
         },
         isShowAllKeys: false,
         defaultConnectConfig: {
-          connectionName: 'test',
+          connectionName: '',
           host: 'localhost',
           port: '6379',
           password: ''
@@ -198,8 +198,8 @@
         listQuery: {
           key: '',
           cursor: '0',
-          count: '3000',
-          pageSize: 3000,
+          count: '10000',
+          pageSize: 1000,
           pageIndex: 1
         },
         total: 0,
@@ -342,26 +342,29 @@
         this.isShowAllKeys = true
         this.loadingKeys = true
         const handler = this.selectedHandler.handler
-        let allKeys = []
-        let cursor = 0
         let key = this.listQuery.key ? '*' + this.listQuery.key + '*' : '*'
         const count = this.listQuery.count
 
-        do {
-          let scanAllKeys = new Redis.Command('scan', [cursor, 'Match', key, 'COUNT', count], {replyEncoding: 'utf8'})
-          scanAllKeys.promise.then(result => {
-            console.log(result)
-            cursor = parseInt(result[0])
-            allKeys.push(result[1])
-          })
-          await handler.sendCommand(scanAllKeys)
-        }while (cursor !== 0)
+        // do {
+        //   let scanAllKeys = new Redis.Command('scan', [cursor, 'Match', key, 'COUNT', count], {replyEncoding: 'utf8'})
+        //   scanAllKeys.promise.then(result => {
+        //     cursor = parseInt(result[0])
+        //     console.log(result)
+        //     total += result[1].length
+        //     allKeys = allKeys.concat(result[1])
+        //   })
+        //   await handler.sendCommand(scanAllKeys)
+        // }while (cursor !== 0)
 
-        console.log(allKeys)
+        let allKeys = []
+        const startTime = Math.round(new Date().getTime()/1000)
+        allKeys = await this.scan(handler, key, count)
+        const endTime = Math.round(new Date().getTime()/1000)
+        console.log("scan 所用时间"+ (endTime-startTime))
         this.loadingKeys = false
-        this.total = this.selectedHandler.dbSize
-        this.keys = allKeys[0]
+        this.total = allKeys.length
         this.allKeys = allKeys
+        this.keysPage()
       },
       onOpenConnectDialog() {
         this.dialogConnectVisible = true
@@ -378,7 +381,7 @@
       handleCurrentChange(val) {
         this.loadingKeys = true
         this.listQuery.pageIndex = val
-        this.keys = this.allKeys[val-1]
+        this.keysPage()
         this.loadingKeys = false
       },
       handleTabsEdit(targetName, action) {
@@ -401,6 +404,29 @@
           this.activeKey = activeName
           this.selectedKeys = tabs.filter(tab => tab.key !== targetName)
         }
+      },
+      keysPage() {
+        const index = this.listQuery.pageIndex - 1
+        const size = this.listQuery.pageSize
+        this.keys = this.allKeys.slice(size*index, size*(index+1))
+        console.log(this.keys.length)
+      },
+      scan(handler, key, count) {
+        return new Promise((resolve, reject) => {
+          let allKeys = []
+
+          let stream = handler.scanStream({
+            match: key,
+            count
+          })
+
+          stream.on('data', function (resultKeys) {
+            allKeys = allKeys.concat(resultKeys)
+          })
+          stream.on('end', function () {
+            resolve(allKeys)
+          })
+        })
       }
     }
   }

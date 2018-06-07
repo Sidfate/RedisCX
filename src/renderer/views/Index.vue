@@ -37,7 +37,10 @@
                 <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
                   <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
                 </el-input>
-                <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter" style="float: right"></el-button>
+                <el-button-group style="float: right">
+                  <el-button type="primary" icon="el-icon-plus"></el-button>
+                  <el-button class="filter-item" type="warning" icon="el-icon-refresh" @click="handleFilter"></el-button>
+                </el-button-group>
               </div>
 
               <template v-if="isShowAllKeys">
@@ -66,11 +69,11 @@
               <div >
                 <div class="value-header">
                   <div>
-                    <el-tag type="success">{{ item.type.toUpperCase() }}</el-tag> {{ item.key }}
+                    <el-tag type="success">{{ item.type.toUpperCase() }}</el-tag>
+                    {{ item.key | getKeyLabel(30) }}
                     <span style="float: right">{{ "TTL: " + item.ttl }}</span>
                   </div>
                   <el-button-group style="float: right">
-                    <el-button type="primary" icon="el-icon-edit"></el-button>
                     <el-button type="warning" icon="el-icon-refresh" @click="onRefreshKey(item.key)"></el-button>
                     <el-button type="danger" icon="el-icon-delete" @click="onDeleteKey(item.key)"></el-button>
                   </el-button-group>
@@ -80,8 +83,9 @@
                           type="textarea"
                           :autosize="{ minRows: 2, maxRows: 4}"
                           placeholder="请输入内容"
-                          v-model="item.value" style="margin-top: 20px;">
+                          v-model="item.value" style="margin: 20px 0;">
                   </el-input>
+                  <el-button type="primary" @click="onSetKey(item)">保存</el-button>
                 </template>
                 <template v-else-if="item.type === 'hash'">
                   <el-table :data="item.value" fit highlight-current-row style="margin: 20px 0;" >
@@ -169,6 +173,7 @@
 <script>
   import Redis from 'ioredis'
   import { shell } from 'electron'
+  import Store from 'electron-store'
 
   export default {
     name: "index",
@@ -204,14 +209,19 @@
         },
         total: 0,
         activeKey: 'keys',
-        selectedKeys: []
+        selectedKeys: [],
+        store: null
       }
     },
     filters: {
-      getKeyLabel(key) {
+      getKeyLabel(key, num) {
+        if(!num) {
+          num = 10
+        }
+
         let label = key
-        if(key.length > 10) {
-          label = key.substring(0, 10)+'...'
+        if(key.length > num) {
+          label = key.substring(0, num)+'...'
         }
 
         return label
@@ -219,7 +229,6 @@
     },
     watch: {
       activeHandler() {
-        console.log(this.activeHandler, this.selectedHandler)
         if(this.selectedHandler && !this.activeHandler.hasOwnProperty(this.selectedHandler.handlerIndex)) {
           this.selectedHandler = null
         }
@@ -227,7 +236,12 @@
     },
     created() {
       // this.connectForm = this.defaultConnectConfig
+      this.store = new Store()
 
+      let storeList = this.store.get('connectList')
+      if(storeList) {
+        this.connectList = storeList
+      }
       this.connectForm = this.defaultConnectConfig
     },
     methods: {
@@ -242,6 +256,13 @@
             return
           }
         }
+
+        let storeList = this.store.get('connectList')
+        if(!storeList) {
+          storeList = []
+        }
+        storeList.push(this.connectForm)
+        this.store.set('connectList', storeList)
         this.connectList.push(Object.assign({}, this.connectForm))
         this.onCloseConnectDialog()
       },
@@ -280,7 +301,6 @@
         const handler = this.selectedHandler.handler
 
         const type = await handler.type(key)
-        console.log(type)
         let value = null
         const ttl = await handler.ttl(key)
         switch (type) {
@@ -303,9 +323,18 @@
         }
 
         this.activeKey = key
-        if(!this.selectedKeys.some(  (v,i)  =>  (v.key === key) )) {
-          this.selectedKeys.push({key, value, type, ttl})
+        const newKey = {key, value, type, ttl}
+        let index = -1
+        this.selectedKeys.some((v,i) => {
+          index = i
+          return v.key === key
+        })
+        if(index === -1) {
+          this.selectedKeys.push(newKey)
+        }else {
+          this.$set(this.selectedKeys, index, newKey)
         }
+
         this.loadingValue = false
       },
       // 删除key
@@ -314,6 +343,8 @@
         await handler.del(key)
 
         const index = this.keys.indexOf(key)
+        this.total -= 1
+        this.$set(this.selectedHandler, 'dbSize', this.selectedHandler.dbSize-1)
         if (index > -1) {
           this.keys.splice(index, 1)
         }
@@ -325,6 +356,11 @@
       async onRefreshKey(key) {
         await this.onShowValue(key)
       },
+      // 修改值
+      async onSetKey(item) {
+        const handler = this.selectedHandler.handler
+        await handler.set(item.key, item.value)
+      },
       // 断开连接
       async onDisconnect(index) {
         let activeHandler = Object.assign({}, this.activeHandler)
@@ -332,38 +368,46 @@
         delete activeHandler[index]
         this.activeHandler = Object.assign({}, activeHandler)
       },
-      handleFilter() {
+      async handleFilter() {
+        await this.freshDbSize()
         this.fetchData()
+      },
+      async freshDbSize() {
+        const handler = this.selectedHandler.handler
+        const dbSize = await handler.dbsize()
+
+        this.$set(this.selectedHandler, 'dbSize', dbSize)
       },
       async fetchData() {
         if(!this.listQuery.key) {
-          return
+          // return
         }
         this.isShowAllKeys = true
         this.loadingKeys = true
         const handler = this.selectedHandler.handler
-        let allKeys = []
-        let cursor = 0
-        let total = 0
         let key = this.listQuery.key ? '*' + this.listQuery.key + '*' : '*'
         const count = this.listQuery.count
 
-        do {
-          let scanAllKeys = new Redis.Command('scan', [cursor, 'Match', key, 'COUNT', count], {replyEncoding: 'utf8'})
-          scanAllKeys.promise.then(result => {
-            cursor = parseInt(result[0])
-            console.log(cursor)
-            total += result[1].length
-            allKeys.push(result[1])
-          })
-          await handler.sendCommand(scanAllKeys)
-        }while (cursor !== 0)
+        // do {
+        //   let scanAllKeys = new Redis.Command('scan', [cursor, 'Match', key, 'COUNT', count], {replyEncoding: 'utf8'})
+        //   scanAllKeys.promise.then(result => {
+        //     cursor = parseInt(result[0])
+        //     console.log(result)
+        //     total += result[1].length
+        //     allKeys = allKeys.concat(result[1])
+        //   })
+        //   await handler.sendCommand(scanAllKeys)
+        // }while (cursor !== 0)
 
+        let allKeys = []
+        const startTime = Math.round(new Date().getTime())
+        allKeys = await this.scan(handler, key, count)
+        const endTime = Math.round(new Date().getTime())
+        console.log("scan 所用时间"+ ((endTime-startTime)/1000).toFixed(2))
         this.loadingKeys = false
-        // this.total = this.selectedHandler.dbSize
-        this.total = total
-        this.keys = allKeys[0]
+        this.total = allKeys.length
         this.allKeys = allKeys
+        this.keysPage()
       },
       onOpenConnectDialog() {
         this.dialogConnectVisible = true
@@ -380,7 +424,7 @@
       handleCurrentChange(val) {
         this.loadingKeys = true
         this.listQuery.pageIndex = val
-        this.keys = this.allKeys[val-1]
+        this.keysPage()
         this.loadingKeys = false
       },
       handleTabsEdit(targetName, action) {
@@ -403,6 +447,28 @@
           this.activeKey = activeName
           this.selectedKeys = tabs.filter(tab => tab.key !== targetName)
         }
+      },
+      keysPage() {
+        const index = this.listQuery.pageIndex - 1
+        const size = this.listQuery.pageSize
+        this.keys = this.allKeys.slice(size*index, size*(index+1))
+      },
+      scan(handler, key, count) {
+        return new Promise((resolve, reject) => {
+          let allKeys = []
+
+          let stream = handler.scanStream({
+            match: key,
+            count
+          })
+
+          stream.on('data', function (resultKeys) {
+            allKeys = allKeys.concat(resultKeys)
+          })
+          stream.on('end', function () {
+            resolve(allKeys)
+          })
+        })
       }
     }
   }

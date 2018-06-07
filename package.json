@@ -55,10 +55,12 @@
     "element-ui": "^2.3.8",
     "ioredis": "^3.2.2",
     "vue": "^2.3.3",
-    "vue-codemirror-lite": "^1.0.4",
+    "normalize.css": "7.0.0",
+    "nprogress": "0.2.0",
     "vue-electron": "^1.0.6",
     "vue-router": "^2.5.3",
-    "vuex": "^2.3.1"
+    "vuex": "^2.3.1",
+    "js-cookie": "2.2.0"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
@@ -92,6 +94,8 @@
     "vue-template-compiler": "^2.4.2",
     "webpack": "^3.5.2",
     "webpack-dev-server": "^2.7.1",
-    "webpack-hot-middleware": "^2.18.2"
+    "webpack-hot-middleware": "^2.18.2",
+    "sass-loader": "6.0.6",
+    "node-sass": "^4.7.2"
   }
 }

@@ -1,0 +1,156 @@
+<template>
+  <div class="app-container" v-loading.body="loadingDbs" element-loading-text="connecting...">
+    <div class="filter-container" style="margin-bottom: 5px;">
+      <el-input @keyup.enter.native="onFilter" style="width: 200px;" class="filter-item"
+                placeholder="search for db" v-model="listQuery.number" size="small">
+        <el-button slot="append" icon="el-icon-search" @click="onFilter"></el-button>
+      </el-input>
+      <el-button-group style="float: right">
+        <el-button class="filter-item" type="info" size="small" icon="el-icon-setting"></el-button>
+        <el-button class="filter-item" type="warning" size="small" icon="el-icon-refresh" @click="onFilter"></el-button>
+      </el-button-group>
+    </div>
+
+    <el-table
+            :data="dbList"
+            style="width: 100%"
+            size="mini"
+            :default-sort="{prop: 'db'}"
+            fit highlight-current-row
+    >
+      <el-table-column
+              prop="db"
+              label="DB"
+              sortable
+              width="180">
+      </el-table-column>
+      <el-table-column
+              prop="size"
+              label="Size"
+              sortable>
+      </el-table-column>
+      <el-table-column
+              label="Operation"
+              width="120">
+        <template slot-scope="scope">
+          <router-link :to="{name: 'Keys', params: { db: scope.row.db }}">
+            <el-button
+                    type="text"
+                    size="small">
+              Select
+            </el-button>
+          </router-link>
+          <el-button
+                  @click="onFlush(scope.row.db)"
+                  type="text"
+                  size="small" style="color: #F56C6C;">
+            Flush
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+</template>
+
+<script>
+  import {mapGetters} from 'vuex'
+  import Redis from 'ioredis'
+
+  export default {
+    name: "DB",
+    computed: {
+      ...mapGetters([
+        'connectMap'
+      ])
+    },
+    watch: {
+      // 如果路由有变化，会再次执行该方法
+      '$route': 'getDbs'
+    },
+    data() {
+      return {
+        dbList: [],
+        listQuery: {
+          number: null
+        },
+        loadingDbs: false,
+        handler: null
+      }
+    },
+    async created() {
+      await this.connect()
+      await this.getDbs()
+    },
+    methods: {
+      async getDbs() {
+        this.loadingDbs = true
+        const dbRes = await this.handler.config('get', 'databases')
+        const dbCount = parseInt(dbRes[1])
+        let dbList = []
+        let pipeline = this.handler.pipeline()
+
+        for (let i = 0; i < dbCount; i++) {
+          pipeline.select(i)
+          pipeline.dbsize()
+        }
+        const pipeRes = await pipeline.exec()
+
+        pipeRes.map((v, i) => {
+          if (i % 2 === 1) {
+            dbList.push({
+              db: (i - 1) / 2,
+              size: parseInt(v[1])
+            })
+          }
+        })
+
+        if (this.listQuery.number) {
+          dbList = dbList.filter((v, i) => (i === this.listQuery.number))
+        }
+        this.dbList = dbList
+        this.loadingDbs = false
+      },
+      async connect() {
+        const name = this.$route.params['name']
+        const thisConnect = this.connectMap[name]
+        thisConnect['showFriendlyErrorStack'] = true
+        // thisConnect['retry_strategy'] =  function (options) {
+        //   console.log(options)
+        //   if (options.error.code === 'ECONNREFUSED') {
+        //     // End reconnecting on a specific error and flush all commands with a individual error
+        //     console.log('连接被拒绝');
+        //   }
+        //   if (options.times_connected > 10) {
+        //     console.log('重试连接超过十次');
+        //   }
+        //   // reconnect after
+        //   return Math.max(options.attempt * 100, 3000);
+        // }
+        console.log(thisConnect)
+
+        const handler = await Redis(thisConnect)
+        this.handler = handler
+        this.$store.dispatch('SetHandler', { handler, name })
+      },
+      async onFilter() {
+        await this.getDbs()
+      },
+      async onFlush(db) {
+        this.$confirm('Are you sure to flush this db?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          await this.handler.select(db)
+          await this.handler.flushdb()
+          this.$message.success('Flush db successfully!')
+          this.$set(this.dbList, db, {db, size: 0})
+        })
+      }
+    }
+  }
+</script>
+
+<style scoped>
+
+</style>

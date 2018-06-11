@@ -105,7 +105,7 @@
         })
 
         if (this.listQuery.number) {
-          dbList = dbList.filter((v, i) => (i === this.listQuery.number))
+          dbList = dbList.filter((v, i) => (i === parseInt(this.listQuery.number)))
         }
         this.dbList = dbList
         this.loadingDbs = false
@@ -141,8 +141,9 @@
           cancelButtonText: 'Cancel',
           type: 'warning'
         }).then(async () => {
-          await this.handler.select(db)
-          await this.handler.flushdb()
+          const handler = this.handler
+          await handler.select(db)
+          await handler.flushdb()
           this.$message.success('Flush db successfully!')
           this.$set(this.dbList, db, {db, size: 0})
         })

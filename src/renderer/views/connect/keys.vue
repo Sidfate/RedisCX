@@ -14,7 +14,7 @@
             <el-button slot="append" icon="el-icon-search" @click="handleFilter" size="small"></el-button>
           </el-input>
           <el-button-group style="float: right">
-            <el-button type="primary" size="small" icon="el-icon-plus"></el-button>
+            <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true"></el-button>
             <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="handleFilter"></el-button>
           </el-button-group>
         </div>
@@ -44,10 +44,38 @@
       <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel()" :name="key" :key="key">
         <key-tap :one-key="key"></key-tap>
       </el-tab-pane>
-      <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel()" :name="key" :key="key">
-        <key-tap :one-key="key"></key-tap>
-      </el-tab-pane>
     </el-tabs>
+
+    <el-dialog title="New key" :visible.sync="keyFormVisible" :modal-append-to-body="false" width="50%" top="50px" @close="onClearForm">
+      <el-form :model="keyForm" label-position="top" label-width="80px" size="small" :rules="keyFormRules" ref="keyForm">
+        <el-form-item label="Key" prop="key">
+          <el-input v-model="keyForm.key" auto-complete="off" placeholder="Please input the key."></el-input>
+        </el-form-item>
+        <el-form-item label="Type">
+          <el-select v-model="keyForm.type">
+            <el-option label="string" value="string"></el-option>
+            <el-option label="hash" value="hash"></el-option>
+            <el-option label="set" value="set"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Value" prop="value">
+          <el-alert
+                  title="Please enter a value in JSON format."
+                  type="warning"
+                  show-icon :closable="false" style="height: 30px;margin-bottom: 10px;" v-if="keyForm.type != 'string'">
+          </el-alert>
+          <el-input
+                  type="textarea"
+                  placeholder="Please input the value."
+                  v-model="keyForm.value" clearable :rows="3">
+          </el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="keyFormVisible = false">Cancel</el-button>
+        <el-button type="primary" @click="onAddKey">Save</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -73,6 +101,19 @@
       },
     },
     data() {
+      let checkJson = (rule, value, callback) => {
+        if(this.keyForm.type !== 'string') {
+          try {
+            let json = JSON.parse(value)
+            console.log(json)
+            callback()
+          }catch(e) {
+            callback(new Error('Invalid JSON text!'))
+          }
+        }
+        callback()
+      }
+      
       return {
         keys: [],
         allKeys: [],
@@ -90,6 +131,20 @@
         dbSize: 0,
         maxShowSize: 100000,
         searchTime: 0,
+        keyFormVisible: false,
+        keyForm: {
+          key: '',
+          value: '',
+          type: 'string'
+        },
+        keyFormRules: {
+          value: [
+            { validator: checkJson, trigger: 'blur' }
+          ],
+          key: [
+            { required: true, message: 'Please input the key!', trigger: 'blur' }
+          ]
+        }
       }
     },
     async created() {
@@ -108,15 +163,16 @@
         let key = this.listQuery.key ? '*' + this.listQuery.key + '*' : '*'
         const count = this.listQuery.count
 
+        const dbSize = await this.handler.dbsize()
         const startTime = Math.round(new Date().getTime())
         let allKeys = await this.scan(handler, key, count)
-        console.log(allKeys)
         const endTime = Math.round(new Date().getTime())
         console.log("scan 所用时间"+ ((endTime-startTime)/1000).toFixed(2))
         this.searchTime = ((endTime-startTime)/1000).toFixed(2)
 
         this.total = allKeys.length
         this.allKeys = allKeys
+        this.dbSize = dbSize
         this.keysPage()
 
         this.isShowAllKeys = true
@@ -153,6 +209,7 @@
           })
 
           stream.on('data', function (resultKeys) {
+            console.log(resultKeys)
             allKeys = allKeys.concat(resultKeys)
           })
           stream.on('end', function () {
@@ -206,6 +263,64 @@
           this.$message.success('Delete the key successfully!')
         })
       },
+      async onAddKey() {
+        console.log('add key')
+        await this.$refs['keyForm'].validate(async (valid) => {
+          console.log(123)
+          if (valid) {
+            const type = this.keyForm.type
+            const handler = this.handler
+
+            let value = null
+            try {
+              switch (type) {
+                case 'string':
+                  await handler.set(this.keyForm.key, this.keyForm.value)
+                  break
+                case 'hash':
+                  value = JSON.parse(this.keyForm.value)
+                  if(value instanceof Object && !Array.isArray(value)) {
+                    let pipeline = this.handler.pipeline()
+
+                    for(let k in value) {
+                      pipeline.hset(this.keyForm.key, k, value[k])
+                    }
+                    const pipeRes = await pipeline.exec()
+                  }else {
+                    throw new Error('Error with hset')
+                  }
+                  break
+                case 'set':
+                  value = JSON.parse(this.keyForm.value)
+                  if(Array.isArray(value)) {
+                    await handler.sadd(this.keyForm.key, ...value)
+                  }else {
+                    await handler.sadd(this.keyForm.key, value)
+                  }
+                  break
+                default:
+                  this.$message.warning('Invalid type!')
+                  return
+              }
+            }catch (e) {
+              this.$message.warning(e.message)
+              return
+            }
+            this.keyFormVisible = false;
+            this.onClearForm()
+            this.$message.success('Created a new key successfully!')
+          } else {
+            console.log('error submit!!');
+            return false;
+          }
+        })
+
+      },
+      onClearForm() {
+        this.$refs['keyForm'].resetFields()
+        this.keyForm.type = 'string'
+      }
+
     }
   }
 </script>
@@ -217,5 +332,8 @@
     color: #909399;
     margin-top: 10px;
     float: right;
+  }
+  .el-form-item--small.el-form-item {
+    margin-bottom: 10px;
   }
 </style>

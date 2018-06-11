@@ -42,6 +42,14 @@ let rendererConfig = {
         loader:"style-loader!css-loader!sass-loader"
       },
       {
+        test: /\.svg$/,
+        loader: 'svg-sprite-loader',
+        include: [path.join(__dirname, '../src/renderer/icons')],
+        options: {
+          symbolId: 'icon-[name]'
+        }
+      },
+      {
         test: /\.html$/,
         use: 'vue-html-loader'
       },
@@ -69,6 +77,9 @@ let rendererConfig = {
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+        exclude: [
+          path.join(__dirname, '../src/renderer/icons'),
+        ],
         use: {
           loader: 'url-loader',
           query: {

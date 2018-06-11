@@ -121,7 +121,7 @@
             value = await handler.smembers(key)
             break;
           default:
-            this.$message.warning('无法打开指定的key值')
+            this.$message.warning('Can\'t open the key!')
             return
         }
 

@@ -4,11 +4,14 @@ import App from './App'
 import router from './router'
 import store from './store'
 
+import 'normalize.css/normalize.css'// A modern alternative to CSS resets
+
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
-// import VueCodeMirror from 'vue-codemirror-lite'
 
-// Vue.use(VueCodeMirror)
+import '@/styles/index.scss' // global css
+import '@/icons' // icon
+
 Vue.use(ElementUI)
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))

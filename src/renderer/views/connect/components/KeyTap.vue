@@ -39,7 +39,7 @@
         </el-table-column>
       </el-table>
     </template>
-    <template v-else-if="item.type === 'set'">
+    <template v-else-if="item.type === 'set' || item.type === 'list'">
       <el-table :data="item.value" fit highlight-current-row style="margin: 20px 0;" >
         <el-table-column label="row" width="100">
           <template slot-scope="scope">
@@ -119,7 +119,11 @@
             break
           case 'set':
             value = await handler.smembers(key)
-            break;
+            break
+          case 'list':
+            const listLength = await handler.llen(key)
+            value = await handler.lrange(key, 0, listLength)
+            break
           default:
             this.$message.warning('Can\'t open the key!')
             return

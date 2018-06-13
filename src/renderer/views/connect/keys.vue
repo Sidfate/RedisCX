@@ -129,7 +129,7 @@
         loadingKeys: false,
         total: 0,
         dbSize: 0,
-        maxShowSize: 100000,
+        maxShowSize: 10000,
         searchTime: 0,
         keyFormVisible: false,
         keyForm: {

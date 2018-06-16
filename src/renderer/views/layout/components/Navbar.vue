@@ -6,9 +6,21 @@
 
       <div class="avatar-container">
         <div class="avatar-wrapper">
-          <router-link :to="{path: '/connect/form'}">
-            <el-button type="text primary" icon="el-icon-plus">Connect</el-button>
-          </router-link>
+          <el-dropdown>
+            <el-button type="text primary" icon="el-icon-setting" class="btn-setting">
+              <!--<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>-->
+            </el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item>
+                <router-link :to="{name: 'ConnectNewForm'}">
+                  <el-button type="text primary" icon="el-icon-plus">Connect</el-button>
+                </router-link>
+              </el-dropdown-item>
+              <el-dropdown-item>
+                <el-button type="text" style="color: #E6A23C;" icon="el-icon-refresh" @click="onRestore">Restore</el-button>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </div>
       </div>
     </el-menu>
@@ -33,6 +45,16 @@ export default {
   methods: {
     toggleSideBar() {
       this.$store.dispatch('ToggleSideBar')
+    },
+    onRestore() {
+      this.$confirm('Restore will delete all your connect and config, Are you sure to do it?', 'Warning', {
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+      }).then(async () => {
+        this.$store.dispatch('CleanAllSetting')
+        this.$router.push({ path: '/dashboard' })
+      })
     }
   }
 }
@@ -63,6 +85,9 @@ export default {
     .avatar-wrapper {
       cursor: pointer;
       position: relative;
+      .btn-setting {
+        font-size: 24px;
+      }
     }
   }
 }

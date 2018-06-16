@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+
     <el-form ref="connectForm" :model="connectForm" label-width="60px" style="margin: 20px;" :rules="rules">
       <el-form-item label="Name" prop="connectionName" >
         <el-input v-model="connectForm.connectionName" auto-complete="off"></el-input>
@@ -14,7 +15,7 @@
         <el-input v-model="connectForm.password" auto-complete="off" type="password"></el-input>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="onAddConnect">Save</el-button>
+        <el-button type="primary" @click="onSaveConnect">Save</el-button>
         <el-button @click="onReset">Reset</el-button>
       </el-form-item>
     </el-form>
@@ -25,9 +26,17 @@
   import { mapGetters } from 'vuex'
 
   export default {
+    props: [
+      'editable'
+    ],
     name: "ConnectForm",
     created() {
-      this.resetForm()
+      if(this.editable) {
+        this.editedName = this.$route.params['name']
+        this.connectForm = Object.assign({}, this.connectMap[this.editedName])
+      }else {
+        this.resetForm()
+      }
     },
     computed: {
       ...mapGetters([
@@ -36,7 +45,6 @@
     },
     data() {
       const checkName = (rule, value, callback) => {
-        console.log(this.connectMap)
         if(this.connectMap.hasOwnProperty(value)) {
           callback(new Error("Connection name must not be repeated."))
         }else {
@@ -45,6 +53,7 @@
       };
 
       return {
+        editedName: null,
         connectForm: {
           connectionName: '',
           host: '',
@@ -74,10 +83,14 @@
     },
     methods: {
       // 添加连接
-      onAddConnect() {
-        this.$store.dispatch('AddConnect', this.connectForm)
-
-        this.$message.success('Created the connection successfully!')
+      onSaveConnect() {
+        if(this.editable) {
+          this.$store.dispatch('EditConnect', { name: this.editedName, connection: this.connectForm })
+          this.$message.success('Updated the connection successfully!')
+        } else {
+          this.$store.dispatch('AddConnect', this.connectForm)
+          this.$message.success('Created the connection successfully!')
+        }
       },
       onReset() {
         this.$refs['connectForm'].resetFields()

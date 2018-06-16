@@ -60,7 +60,7 @@
           <el-input v-model="keyForm.key" auto-complete="off" placeholder="Please input the key."></el-input>
         </el-form-item>
         <el-form-item label="Type">
-          <el-select v-model="keyForm.type">
+          <el-select v-model="keyForm.type" style="width: 100%">
             <el-option v-for="(type, index) in keyTypes" :label="type" :value="type"></el-option>
           </el-select>
         </el-form-item>

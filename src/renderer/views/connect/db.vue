@@ -1,5 +1,6 @@
 <template>
   <div class="app-container" v-loading.body="loadingDbs" element-loading-text="connecting...">
+
     <div class="filter-container" style="margin-bottom: 5px;">
       <el-autocomplete
               class="inline-input"
@@ -13,7 +14,6 @@
         <el-button slot="append" icon="el-icon-search" @click="onFilter"></el-button>
       </el-autocomplete>
       <el-button-group style="float: right">
-        <el-button class="filter-item" type="info" size="small" icon="el-icon-setting"></el-button>
         <el-button class="filter-item" type="warning" size="small" icon="el-icon-refresh" @click="getDbs"></el-button>
       </el-button-group>
     </div>
@@ -69,7 +69,10 @@
     computed: {
       ...mapGetters([
         'connectMap'
-      ])
+      ]),
+      selectedName() {
+        return this.$route.params['name']
+      }
     },
     watch: {
       // 如果路由有变化，会再次执行该方法

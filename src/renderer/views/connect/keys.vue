@@ -299,7 +299,6 @@
       async onAddKey() {
         console.log('add key')
         await this.$refs['keyForm'].validate(async (valid) => {
-          console.log(123)
           if (valid) {
             const type = this.keyForm.type
             const handler = this.handler

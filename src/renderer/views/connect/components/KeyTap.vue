@@ -5,17 +5,18 @@
         <el-tag type="success">{{ item.type.toUpperCase() }}</el-tag>
         {{ item.key | getKeyLabel() }}
 
-        <el-button-group style="float: right">
-          <!--<el-button type="primary" icon="el-icon-plus" size="small" @click="onRefreshKey(item.key)" v-if="item.type !== 'string'"></el-button>-->
-          <el-button type="warning" icon="el-icon-refresh" size="small" @click="onRefreshKey(item.key)"></el-button>
-          <!--<el-button type="danger" icon="el-icon-delete" size="small" @click="onDeleteKey(item.key)"></el-button>-->
-        </el-button-group>
+        <div class="ttl-container">
+          <el-input v-model="item.ttl" size="small">
+            <template slot="prepend">TTL</template>
+          </el-input>
+        </div>
       </div>
-      <div class="ttl-container">
-        <el-input v-model="item.ttl" size="small">
-          <template slot="prepend">TTL</template>
-        </el-input>
-      </div>
+
+      <el-button-group style="float: right;clear: both;margin-top: 10px;">
+        <el-button type="primary" icon="el-icon-plus" size="small" @click="onRefreshKey(item.key)" v-if="item.type !== 'string'"></el-button>
+        <el-button type="warning" icon="el-icon-refresh" size="small" @click="onRefreshKey(item.key)"></el-button>
+        <!--<el-button type="danger" icon="el-icon-delete" size="small" @click="onDeleteKey(item.key)"></el-button>-->
+      </el-button-group>
     </div>
     <template v-if="item.type === 'string'">
       <json-editor @changed="changeValue" :value="item.value"></json-editor>
@@ -23,13 +24,13 @@
     </template>
     <template v-else>
       <el-table :data="item.value" fit highlight-current-row style="margin: 20px 0;" >
-        <el-table-column label="row" width="100">
+        <el-table-column label="row" width="50">
           <template slot-scope="scope">
             {{ scope.$index+1 }}
           </template>
         </el-table-column>
         <template v-if="hasTableKey">
-          <el-table-column label="key" width="100" >
+          <el-table-column label="key" width="100">
             <template slot-scope="scope">
               {{ scope.row.key }}
             </template>
@@ -39,20 +40,22 @@
           <template slot-scope="scope">
             <template v-if="scope.row.edit">
               <el-input class="edit-input" size="small" v-model="scope.row.value"></el-input>
-              <el-button class='cancel-btn' size="small" icon="el-icon-refresh" type="warning" @click="cancelEdit(scope.row)">Cancel</el-button>
+              <el-button class="cancel-btn" size="mini" icon="el-icon-refresh" type="warning" @click="cancelEdit(scope.row)"></el-button>
             </template>
             <span v-else>{{ scope.row.value }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column align="center" label="Actions" width="120">
+        <el-table-column align="center" label="Actions" width="100">
           <template slot-scope="scope">
-            <el-button v-if="scope.row.edit" type="success" @click="onSetKey(scope.row)" size="small" icon="el-icon-circle-check-outline">Ok</el-button>
-            <el-button v-else type="primary" @click="onEnableEdit(scope.row)" size="small" icon="el-icon-edit"></el-button>
+            <el-button v-if="scope.row.edit" type="success" @click="onSetKey(scope.row)" size="mini" icon="el-icon-circle-check-outline"></el-button>
+            <el-button v-else type="primary" @click="onEnableEdit(scope.row)" size="mini" icon="el-icon-edit"></el-button>
           </template>
         </el-table-column>
       </el-table>
     </template>
+
+
   </div>
 </template>
 
@@ -216,13 +219,14 @@
    width: 30%;
    max-width: 120px;
    margin-top: 5px;
+   float: right;
  }
  .edit-input {
-   padding-right: 100px;
+   padding-right: 55px;
  }
  .cancel-btn {
    position: absolute;
    right: 15px;
-   top: 10px;
+   top: 12px;
  }
 </style>

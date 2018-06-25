@@ -28,7 +28,7 @@
         </div>
         <template v-if="isShowAllKeys">
           <div class="search-info" >
-            {{ '查询到key的数量'+allKeys.length+", 共计耗时："+searchTime+'s' }}
+            {{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}
           </div>
           <el-table :data="keys" fit highlight-current-row style="margin: 15px 0;clear: both;" size="small">
             <el-table-column label="key">
@@ -78,8 +78,8 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="keyFormVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="onAddKey">Save</el-button>
+        <el-button @click="keyFormVisible = false" size="small">Cancel</el-button>
+        <el-button type="primary" @click="onAddKey" size="small">Save</el-button>
       </div>
     </el-dialog>
   </div>
@@ -99,7 +99,9 @@
     computed: {
       ...mapGetters([
         'handler',
-        'selectedName'
+        'selectedName',
+        'autoSearch',
+        'autoSearchLimit'
       ])
     },
     filters: {
@@ -141,7 +143,6 @@
         loadingKeys: false,
         total: 0,
         dbSize: 0,
-        maxShowSize: 10000,
         searchTime: 0,
         keyFormVisible: false,
         keyForm: {
@@ -169,7 +170,7 @@
       const db = this.$route.params['db']
       await this.handler.select(db)
       const dbSize = await this.handler.dbsize()
-      if(dbSize < this.maxShowSize) {
+      if(this.autoSearch || dbSize < this.autoSearchLimit) {
         await this.getKeys()
       }
       this.dbSize = dbSize
@@ -382,7 +383,7 @@
     font-size: 12px;
     color: #909399;
     margin-top: 10px;
-    float: right;
+    /*float: right;*/
   }
   .el-form-item--small.el-form-item {
     margin-bottom: 10px;

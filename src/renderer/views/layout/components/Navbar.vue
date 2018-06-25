@@ -7,7 +7,7 @@
       <div class="avatar-container">
         <div class="avatar-wrapper">
           <el-dropdown>
-            <el-button type="text primary" icon="el-icon-setting" class="btn-setting">
+            <el-button type="text info" icon="el-icon-more" class="btn-setting">
               <!--<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>-->
             </el-button>
             <el-dropdown-menu slot="dropdown">
@@ -17,6 +17,9 @@
                 </router-link>
               </el-dropdown-item>
               <el-dropdown-item>
+                <el-button type="text" icon="el-icon-setting" @click="settingFormVisible = true">Setting</el-button>
+              </el-dropdown-item>
+              <el-dropdown-item>
                 <el-button type="text" style="color: #E6A23C;" icon="el-icon-refresh" @click="onRestore">Restore</el-button>
               </el-dropdown-item>
             </el-dropdown-menu>
@@ -24,6 +27,27 @@
         </div>
       </div>
     </el-menu>
+
+    <el-dialog title="Setting" :visible.sync="settingFormVisible" :modal-append-to-body="false" width="50%" top="50px">
+      <el-form :model="settingForm"
+               label-position="left"
+               label-width="50%"
+               size="small"
+               :rules="settingFormRules"
+               ref="settingForm"
+      >
+        <el-form-item label="Auto Search">
+          <el-switch v-model="settingForm.autoSearch"></el-switch>
+        </el-form-item>
+        <el-form-item label="Auto Search Limit" >
+          <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="settingFormVisible = false" size="small">Cancel</el-button>
+        <el-button type="primary" @click="onSubmit" size="small">Save</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -39,8 +63,26 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'sidebar'
+      'sidebar',
+      'autoSearch',
+      'autoSearchLimit'
     ])
+  },
+  mounted() {
+    this.settingForm.autoSearch = this.autoSearch
+    this.settingForm.autoSearchLimit = this.autoSearchLimit
+  },
+  data() {
+    return {
+      settingFormVisible: false,
+      settingForm: {
+        autoSearch: null,
+        autoSearchLimit: null
+      },
+      settingFormRules: {
+
+      }
+    }
   },
   methods: {
     toggleSideBar() {
@@ -55,6 +97,22 @@ export default {
         this.$store.dispatch('CleanAllSetting')
         this.$router.push({ path: '/dashboard' })
       })
+    },
+    onSubmit() {
+      const autoSearch = this.settingForm.autoSearch
+      let autoSearchLimit = this.settingForm.autoSearchLimit
+      if(autoSearch) {
+        this.$store.dispatch('EnableAutoSearch')
+        if(!Number.isInteger(autoSearchLimit)) {
+          autoSearchLimit = this.autoSearchLimit
+        }
+        this.$store.dispatch('ChangeAutoSearchLimit', autoSearchLimit)
+      }else {
+        this.$store.dispatch('DisableAutoSearch')
+      }
+
+      this.$message.success('Setting saved!')
+      this.settingFormVisible = false
     }
   }
 }

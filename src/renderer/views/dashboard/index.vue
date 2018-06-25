@@ -7,7 +7,7 @@
       </div>
 
       <div class="text item">
-        Version <span style="color: #F56C6C;"> 0.2.0</span>
+        Version <span style="color: #F56C6C;"> 0.3.0</span>
       </div>
       <div class="text item">
         Created by

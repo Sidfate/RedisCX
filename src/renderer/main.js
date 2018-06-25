@@ -8,11 +8,12 @@ import 'normalize.css/normalize.css'// A modern alternative to CSS resets
 
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
+import locale from 'element-ui/lib/locale/lang/en'
 
 import '@/styles/index.scss' // global css
 import '@/icons' // icon
 
-Vue.use(ElementUI)
+Vue.use(ElementUI, { locale })
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.config.productionTip = false

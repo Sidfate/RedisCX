@@ -6,7 +6,7 @@
         {{ item.key | getKeyLabel() }}
 
         <div class="ttl-container">
-          <el-input v-model="item.ttl" size="small">
+          <el-input v-model="item.ttl" size="small" @blur="onSetTtl">
             <template slot="prepend">TTL</template>
           </el-input>
         </div>
@@ -203,12 +203,12 @@
         row.value = row.originValue
         row.edit = false
       },
-      confirmEdit(row) {
-
-      },
       onEnableEdit(row) {
         row.originValue = row.value
         row.edit = true
+      },
+      async onSetTtl() {
+        await this.handler.expire(this.item.key, this.item.ttl)
       }
     }
   }

@@ -7,8 +7,8 @@
       </el-breadcrumb>
     </div>
 
-    <el-tabs v-model="activeKey" closable @edit="handleTabsEdit">
-      <el-tab-pane label="Keys" name="keys">
+    <el-tabs v-model="activeKey" @edit="handleTabsEdit">
+      <el-tab-pane label="Keys" name="keys" :closable="false">
         <div class="filter-container">
           <el-autocomplete
                   class="inline-input"
@@ -49,7 +49,7 @@
           </div>
         </template>
       </el-tab-pane>
-      <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel()" :name="key" :key="key">
+      <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel()" :name="key" :key="key" closable>
         <key-tap :one-key="key"></key-tap>
       </el-tab-pane>
     </el-tabs>

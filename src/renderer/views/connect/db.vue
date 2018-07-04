@@ -150,17 +150,16 @@
       },
       async onFilter() {
         await this.getDbs()
-        const number = this.listQuery.number
-        if(number && number !== '') {
+        const number = parseInt(this.listQuery.number)
+        if(!isNaN(number)) {
           let searchHistory = this.searchHistory
 
           if(searchHistory.length >= 5) {
             searchHistory = searchHistory.slice(0, 5)
           }
-          if(!searchHistory.some(v => (v.value === number))) {
-            searchHistory.unshift({value: number})
-            addSearchHistory('db', searchHistory)
-          }
+          searchHistory = searchHistory.filter(v => (v.value != number))
+          searchHistory.unshift({value: number.toString()})
+          addSearchHistory('db', searchHistory)
 
           this.searchHistory = searchHistory
         }
@@ -183,7 +182,6 @@
         let results = queryString ? searchHistory.filter((search) => {
           return (search.value.indexOf(queryString.toLowerCase()) === 0)
         }) : searchHistory;
-        // 调用 callback 返回建议列表的数据
         cb(results);
       },
     }

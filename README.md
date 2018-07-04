@@ -1,8 +1,18 @@
-# redis-cx
+# RedisCX
 
-> redis client for any platform
+> Redis client for any platform.
 
-#### Build Setup
+#### Downloads
+
+[Download Link](https://github.com/Sidfate/redisCX/releases)
+
+#### Snapshots
+
+![1](https://i.loli.net/2018/07/04/5b3cb635640a9.jpg)
+
+![2](https://i.loli.net/2018/07/04/5b3cb5033faaa.jpg)
+
+#### Development
 
 ``` bash
 # install dependencies
@@ -19,4 +29,6 @@ npm run build
 
 ---
 
-This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue) using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).
+#### License
+
+MIT

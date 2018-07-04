@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <el-button-group style="float: right;clear: both;margin-top: 10px;">
+      <el-button-group style="float: right;clear: both;margin: 10px 0;">
         <el-button type="primary" icon="el-icon-plus" size="small" @click="onRefreshKey(item.key)" v-if="item.type !== 'string'"></el-button>
         <el-button type="warning" icon="el-icon-refresh" size="small" @click="onRefreshKey(item.key)"></el-button>
         <!--<el-button type="danger" icon="el-icon-delete" size="small" @click="onDeleteKey(item.key)"></el-button>-->

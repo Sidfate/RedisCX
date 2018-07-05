@@ -251,10 +251,9 @@
           if(searchHistory.length >= 5) {
             searchHistory = searchHistory.slice(0, 4)
           }
-          if(!searchHistory.some(v => (v.value === key))) {
-            searchHistory.unshift({value: key})
-            addSearchHistory('keys', searchHistory)
-          }
+          searchHistory = searchHistory.filter(v => (v.value != key))
+          searchHistory.unshift({value: key.toString()})
+          addSearchHistory('db', searchHistory)
 
           this.searchHistory = searchHistory
         }

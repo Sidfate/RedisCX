@@ -1,13 +1,20 @@
 <template>
   <div class="app-container" v-loading.body="loadingDbs" element-loading-text="connecting...">
+
     <div class="filter-container" style="margin-bottom: 5px;">
-      <el-input @keyup.enter.native="onFilter" style="width: 200px;" class="filter-item"
-                placeholder="search for db" v-model="listQuery.number" size="small">
+      <el-autocomplete
+              class="inline-input"
+              v-model="listQuery.number"
+              :fetch-suggestions="querySearch"
+              placeholder="search for db"
+              @keyup.enter.native="onFilter"
+              size="small"
+              style="width: 200px;"
+      >
         <el-button slot="append" icon="el-icon-search" @click="onFilter"></el-button>
-      </el-input>
+      </el-autocomplete>
       <el-button-group style="float: right">
-        <el-button class="filter-item" type="info" size="small" icon="el-icon-setting"></el-button>
-        <el-button class="filter-item" type="warning" size="small" icon="el-icon-refresh" @click="onFilter"></el-button>
+        <el-button class="filter-item" type="warning" size="small" icon="el-icon-refresh" @click="getDbs"></el-button>
       </el-button-group>
     </div>
 
@@ -54,6 +61,7 @@
 
 <script>
   import {mapGetters} from 'vuex'
+  import { getSearchHistory, addSearchHistory } from '@/utils/localStore'
   import Redis from 'ioredis'
 
   export default {
@@ -61,7 +69,10 @@
     computed: {
       ...mapGetters([
         'connectMap'
-      ])
+      ]),
+      selectedName() {
+        return this.$route.params['name']
+      }
     },
     watch: {
       // 如果路由有变化，会再次执行该方法
@@ -69,6 +80,7 @@
     },
     data() {
       return {
+        searchHistory: [],
         dbList: [],
         listQuery: {
           number: null
@@ -80,6 +92,10 @@
     async created() {
       await this.connect()
       await this.getDbs()
+    },
+    mounted() {
+      this.searchHistory = getSearchHistory('db')
+      console.log(this.searchHistory)
     },
     methods: {
       async getDbs() {
@@ -134,6 +150,20 @@
       },
       async onFilter() {
         await this.getDbs()
+        const number = this.listQuery.number
+        if(number && number !== '') {
+          let searchHistory = this.searchHistory
+
+          if(searchHistory.length >= 5) {
+            searchHistory = searchHistory.slice(0, 5)
+          }
+          if(!searchHistory.some(v => (v.value === number))) {
+            searchHistory.unshift({value: number})
+            addSearchHistory('db', searchHistory)
+          }
+
+          this.searchHistory = searchHistory
+        }
       },
       async onFlush(db) {
         this.$confirm('Are you sure to flush this db?', 'Warning', {
@@ -147,7 +177,15 @@
           this.$message.success('Flush db successfully!')
           this.$set(this.dbList, db, {db, size: 0})
         })
-      }
+      },
+      querySearch(queryString, cb) {
+        const searchHistory = this.searchHistory
+        let results = queryString ? searchHistory.filter((search) => {
+          return (search.value.indexOf(queryString.toLowerCase()) === 0)
+        }) : searchHistory;
+        // 调用 callback 返回建议列表的数据
+        cb(results);
+      },
     }
   }
 </script>

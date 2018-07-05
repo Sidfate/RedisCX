@@ -1,8 +1,8 @@
 {
-  "name": "RedisCx",
-  "version": "0.2.0",
+  "name": "RedisCX",
+  "version": "0.3.0",
   "author": "Sidfate",
-  "description": "redis client for any platform",
+  "description": "Redis client for any platform",
   "license": "MIT",
   "main": "./dist/electron/main.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "postinstall": ""
   },
   "build": {
-    "productName": "RedisCx",
+    "productName": "RedisCX",
     "appId": "org.simulatedgreg.electron-vue",
     "directories": {
       "output": "build"

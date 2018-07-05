@@ -10,17 +10,25 @@
     <el-tabs v-model="activeKey" closable @edit="handleTabsEdit">
       <el-tab-pane label="Keys" name="keys">
         <div class="filter-container">
-          <el-input @keyup.enter.native="handleFilter" size="small" style="width: 200px;" class="filter-item" placeholder="search for key" v-model="listQuery.key">
-            <el-button slot="append" icon="el-icon-search" @click="handleFilter" size="small"></el-button>
-          </el-input>
+          <el-autocomplete
+                  class="inline-input"
+                  v-model="listQuery.key"
+                  :fetch-suggestions="querySearch"
+                  placeholder="search for key"
+                  @keyup.enter.native="handleFilter"
+                  size="small"
+                  style="width: 200px;"
+          >
+            <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
+          </el-autocomplete>
           <el-button-group style="float: right">
             <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true"></el-button>
-            <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="handleFilter"></el-button>
+            <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="getKeys"></el-button>
           </el-button-group>
         </div>
         <template v-if="isShowAllKeys">
           <div class="search-info" >
-            {{ '查询到key的数量'+allKeys.length+", 共计耗时："+searchTime+'s' }}
+            {{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}
           </div>
           <el-table :data="keys" fit highlight-current-row style="margin: 15px 0;clear: both;" size="small">
             <el-table-column label="key">
@@ -52,10 +60,8 @@
           <el-input v-model="keyForm.key" auto-complete="off" placeholder="Please input the key."></el-input>
         </el-form-item>
         <el-form-item label="Type">
-          <el-select v-model="keyForm.type">
-            <el-option label="string" value="string"></el-option>
-            <el-option label="hash" value="hash"></el-option>
-            <el-option label="set" value="set"></el-option>
+          <el-select v-model="keyForm.type" style="width: 100%">
+            <el-option v-for="(type, index) in keyTypes" :label="type" :value="type"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="Value" prop="value">
@@ -72,8 +78,8 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="keyFormVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="onAddKey">Save</el-button>
+        <el-button @click="keyFormVisible = false" size="small">Cancel</el-button>
+        <el-button type="primary" @click="onAddKey" size="small">Save</el-button>
       </div>
     </el-dialog>
   </div>
@@ -83,6 +89,7 @@
   import {mapGetters} from 'vuex'
   import { KeyTap } from './components'
   import { formatString } from "@/utils"
+  import { getSearchHistory, addSearchHistory } from '@/utils/localStore'
 
   export default {
     name: "Keys",
@@ -92,13 +99,19 @@
     computed: {
       ...mapGetters([
         'handler',
-        'selectedName'
+        'selectedName',
+        'autoSearch',
+        'autoSearchLimit'
       ])
     },
     filters: {
       getKeyLabel(key) {
         return formatString(key, 8)
       },
+    },
+    mounted() {
+      this.searchHistory = getSearchHistory('keys')
+      console.log(this.searchHistory)
     },
     data() {
       let checkJson = (rule, value, callback) => {
@@ -115,6 +128,7 @@
       }
       
       return {
+        searchHistory: [],
         keys: [],
         allKeys: [],
         selectedKeys: [],
@@ -129,7 +143,6 @@
         loadingKeys: false,
         total: 0,
         dbSize: 0,
-        maxShowSize: 10000,
         searchTime: 0,
         keyFormVisible: false,
         keyForm: {
@@ -144,14 +157,20 @@
           key: [
             { required: true, message: 'Please input the key!', trigger: 'blur' }
           ]
-        }
+        },
+        keyTypes: [
+          'string',
+          'hash',
+          'set',
+          'list'
+        ],
       }
     },
     async created() {
       const db = this.$route.params['db']
       await this.handler.select(db)
       const dbSize = await this.handler.dbsize()
-      if(dbSize < this.maxShowSize) {
+      if(this.autoSearch || dbSize < this.autoSearchLimit) {
         await this.getKeys()
       }
       this.dbSize = dbSize
@@ -224,6 +243,21 @@
       },
       async handleFilter() {
         await this.getKeys()
+
+        const key = this.listQuery.key
+        if(key && key !== '') {
+          let searchHistory = this.searchHistory
+
+          if(searchHistory.length >= 5) {
+            searchHistory = searchHistory.slice(0, 4)
+          }
+          if(!searchHistory.some(v => (v.value === key))) {
+            searchHistory.unshift({value: key})
+            addSearchHistory('keys', searchHistory)
+          }
+
+          this.searchHistory = searchHistory
+        }
       },
       // 获取key的值
       async onShowValue(key) {
@@ -266,7 +300,6 @@
       async onAddKey() {
         console.log('add key')
         await this.$refs['keyForm'].validate(async (valid) => {
-          console.log(123)
           if (valid) {
             const type = this.keyForm.type
             const handler = this.handler
@@ -285,7 +318,7 @@
                     for(let k in value) {
                       pipeline.hset(this.keyForm.key, k, value[k])
                     }
-                    const pipeRes = await pipeline.exec()
+                    await pipeline.exec()
                   }else {
                     throw new Error('Error with hset')
                   }
@@ -298,8 +331,20 @@
                     await handler.sadd(this.keyForm.key, value)
                   }
                   break
+                case 'list':
+                  value = JSON.parse(this.keyForm.value)
+                  if(Array.isArray(value)) {
+                    let pipeline = this.handler.pipeline()
+                    await value.map(async (v, i) => {
+                      pipeline.lpush(this.keyForm.key, v)
+                    })
+                    await pipeline.exec()
+                  }else {
+                    throw new Error('List key\'s value needs a array!')
+                  }
+                  break
                 default:
-                  this.$message.warning('Invalid type!')
+                  throw new Error('Invalid type!')
                   return
               }
             }catch (e) {
@@ -319,8 +364,15 @@
       onClearForm() {
         this.$refs['keyForm'].resetFields()
         this.keyForm.type = 'string'
-      }
-
+      },
+      querySearch(queryString, cb) {
+        const searchHistory = this.searchHistory
+        let results = queryString ? searchHistory.filter((search) => {
+          return (search.value.indexOf(queryString.toLowerCase()) === 0)
+        }) : searchHistory;
+        // 调用 callback 返回建议列表的数据
+        cb(results);
+      },
     }
   }
 </script>
@@ -331,7 +383,7 @@
     font-size: 12px;
     color: #909399;
     margin-top: 10px;
-    float: right;
+    /*float: right;*/
   }
   .el-form-item--small.el-form-item {
     margin-bottom: 10px;

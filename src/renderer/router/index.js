@@ -40,10 +40,18 @@ export const constantRouterMap = [
     component: Layout,
     children: [
       {
-        path: 'form',
-        name: 'ConnectForm',
+        path: '/form/new',
+        name: 'ConnectNewForm',
         component: () => import('@/views/connect/form'),
-        meta: { title: 'New Connect', icon: 'form' }
+        meta: { title: 'New Connect', icon: 'form' },
+        props: { editable: false }
+      },
+      {
+        path: '/form/edit/:name',
+        name: 'ConnectEditForm',
+        component: () => import('@/views/connect/form'),
+        meta: { title: 'Edit Connect', icon: 'form' },
+        props: { editable: true }
       },
       {
         path: '/db/:name',

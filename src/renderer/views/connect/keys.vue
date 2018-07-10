@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Loading...">
+  <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Scanning...">
     <div class="header-container">
       <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 10px;display: inline-block">
         <el-breadcrumb-item :to="{name: 'DB', params: { name: selectedName }}">{{ selectedName }}</el-breadcrumb-item>

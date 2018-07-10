@@ -253,7 +253,7 @@
           }
           searchHistory = searchHistory.filter(v => (v.value != key))
           searchHistory.unshift({value: key.toString()})
-          addSearchHistory('db', searchHistory)
+          addSearchHistory('keys', searchHistory)
 
           this.searchHistory = searchHistory
         }

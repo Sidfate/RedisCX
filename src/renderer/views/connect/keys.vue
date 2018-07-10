@@ -170,7 +170,7 @@
       const db = this.$route.params['db']
       await this.handler.select(db)
       const dbSize = await this.handler.dbsize()
-      if(this.autoSearch || dbSize < this.autoSearchLimit) {
+      if(this.autoSearch && dbSize < this.autoSearchLimit) {
         await this.getKeys()
       }
       this.dbSize = dbSize

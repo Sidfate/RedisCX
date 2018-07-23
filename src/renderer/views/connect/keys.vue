@@ -50,7 +50,7 @@
         </template>
       </el-tab-pane>
       <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel()" :name="key" :key="key" closable>
-        <key-tap :one-key="key"></key-tap>
+        <key-tap :one-key="key" @handleTabsEdit="handleTabsEdit"></key-tap>
       </el-tab-pane>
     </el-tabs>
 

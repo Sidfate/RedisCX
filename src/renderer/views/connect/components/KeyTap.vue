@@ -15,7 +15,7 @@
       <el-button-group style="float: right;clear: both;margin: 10px 0;">
         <el-button type="primary" icon="el-icon-plus" size="small" @click="onRefreshKey(item.key)" v-if="item.type !== 'string'"></el-button>
         <el-button type="warning" icon="el-icon-refresh" size="small" @click="onRefreshKey(item.key)"></el-button>
-        <!--<el-button type="danger" icon="el-icon-delete" size="small" @click="onDeleteKey(item.key)"></el-button>-->
+        <el-button type="danger" icon="el-icon-delete" size="small" @click="onDeleteKey(item.key)"></el-button>
       </el-button-group>
     </div>
     <template v-if="item.type === 'string'">
@@ -46,10 +46,13 @@
           </template>
         </el-table-column>
 
-        <el-table-column align="center" label="Actions" width="100">
+        <el-table-column align="center" label="Actions">
           <template slot-scope="scope">
+            <el-button-group>
             <el-button v-if="scope.row.edit" type="success" @click="onSetKey(scope.row)" size="mini" icon="el-icon-circle-check-outline"></el-button>
             <el-button v-else type="primary" @click="onEnableEdit(scope.row)" size="mini" icon="el-icon-edit"></el-button>
+            <el-button type="danger" icon="el-icon-delete" size="mini" @click="onDeleteKeyValue(scope.row)"></el-button>
+            </el-button-group>
           </template>
         </el-table-column>
       </el-table>
@@ -63,6 +66,7 @@
   import { mapGetters } from 'vuex'
   import { formatString } from "@/utils"
   import JsonEditor from '@/components/JsonEditor'
+  import md5 from 'md5'
 
   export default {
     name: "KeyTap",
@@ -151,14 +155,7 @@
         const handler = this.handler
         await handler.del(key)
 
-        const index = this.keys.indexOf(key)
-        this.total -= 1
-        // this.$set(this.selectedHandler, 'dbSize', this.selectedHandler.dbSize-1)
-        if (index > -1) {
-          this.keys.splice(index, 1)
-        }
-
-        this.handleTabsEdit(key, 'remove')
+        this.$emit('handleTabsEdit', key, 'remove')
         this.$message.success('Delete the key successfully!')
       },
       // 刷新key的值
@@ -207,8 +204,36 @@
         row.originValue = row.value
         row.edit = true
       },
-      async onSetTtl() {
+      async onSetTtl(row) {
         await this.handler.expire(this.item.key, this.item.ttl)
+      },
+      async onDeleteKeyValue(row) {
+        this.loadingValue = true
+        const handler = this.handler
+        const item = this.item
+
+        switch (item.type) {
+          case 'hash':
+            await handler.hdel(item.key, row.key)
+            break
+          case 'set':
+            await handler.srem(item.key, row.originValue)
+            await handler.sadd(item.key, row.value)
+            break
+          case 'list':
+            // lset mylist index "del"
+            // lrem mylist 0 "del"
+            const delVal = md5(row.key)
+            await handler.lset(item.key, row.key, delVal)
+            await handler.lrem(item.key, 0, delVal)
+            break
+          default:
+            this.$message.warning('Can\'t save the key!')
+            return
+        }
+
+        this.$message.success('Update the key successfully!')
+        await this.getValue(this.oneKey)
       }
     }
   }

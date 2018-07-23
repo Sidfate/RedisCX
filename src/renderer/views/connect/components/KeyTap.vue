@@ -152,11 +152,17 @@
       },
       // 删除key
       async onDeleteKey(key) {
-        const handler = this.handler
-        await handler.del(key)
+        this.$confirm('Are you sure to delete this key?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          const handler = this.handler
+          await handler.del(key)
 
-        this.$emit('handleTabsEdit', key, 'remove')
-        this.$message.success('Delete the key successfully!')
+          this.$emit('handleTabsEdit', key, 'remove')
+          this.$message.success('Delete the key successfully!')
+        })
       },
       // 刷新key的值
       async onRefreshKey(key) {
@@ -204,36 +210,40 @@
         row.originValue = row.value
         row.edit = true
       },
-      async onSetTtl(row) {
+      async onSetTtl() {
         await this.handler.expire(this.item.key, this.item.ttl)
       },
       async onDeleteKeyValue(row) {
-        this.loadingValue = true
-        const handler = this.handler
-        const item = this.item
+        const showKey = typeof val === 'undefined' ? row.$index : row.key
+        this.$confirm('Are you sure to delete this item(key: '+showKey+')?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          this.loadingValue = true
+          const handler = this.handler
+          const item = this.item
 
-        switch (item.type) {
-          case 'hash':
-            await handler.hdel(item.key, row.key)
-            break
-          case 'set':
-            await handler.srem(item.key, row.originValue)
-            await handler.sadd(item.key, row.value)
-            break
-          case 'list':
-            // lset mylist index "del"
-            // lrem mylist 0 "del"
-            const delVal = md5(row.key)
-            await handler.lset(item.key, row.key, delVal)
-            await handler.lrem(item.key, 0, delVal)
-            break
-          default:
-            this.$message.warning('Can\'t save the key!')
-            return
-        }
+          switch (item.type) {
+            case 'hash':
+              await handler.hdel(item.key, row.key)
+              break
+            case 'set':
+              await handler.srem(item.key, row.value)
+              break
+            case 'list':
+              const delVal = md5(row.key)
+              await handler.lset(item.key, row.key, delVal)
+              await handler.lrem(item.key, 0, delVal)
+              break
+            default:
+              this.$message.warning('Can\'t save the key!')
+              return
+          }
 
-        this.$message.success('Update the key successfully!')
-        await this.getValue(this.oneKey)
+          this.$message.success('Deleted the key successfully!')
+          await this.getValue(this.oneKey)
+        })
       }
     }
   }

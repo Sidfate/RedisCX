@@ -4,11 +4,21 @@
 
 > Redis client for any platform.
 
-#### Downloads
+### Feature
+
+**What's important!**
+
+* Support multiple connections.
+* Optimize searching for keys in Big-Data dbs.
+* Support reserving search history.
+* More lighter UI and simpler operation.
+* ...
+
+### Downloads
 
 [Download Link](https://github.com/Sidfate/redisCX/releases)
 
-#### Snapshots
+### Snapshots
 
 ![1](https://i.loli.net/2018/07/23/5b55720614ed9.png)
 
@@ -16,7 +26,7 @@
 
 ![3](https://i.loli.net/2018/07/23/5b55725b3760c.png)
 
-#### Development
+### Development
 
 ``` bash
 # install dependencies
@@ -33,6 +43,6 @@ npm run build
 
 ---
 
-#### License
+### License
 
 MIT

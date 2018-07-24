@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-
     <el-form ref="connectForm" :model="connectForm" label-width="60px" style="margin: 20px;" :rules="rules">
       <el-form-item label="Name" prop="connectionName" >
         <el-input v-model="connectForm.connectionName" auto-complete="off"></el-input>
@@ -16,6 +15,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSaveConnect">Save</el-button>
+        <el-button @click="onTestConnect">Test Connection</el-button>
         <el-button @click="onReset">Reset</el-button>
       </el-form-item>
     </el-form>
@@ -24,6 +24,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import Redis from 'ioredis'
 
   export default {
     props: [
@@ -82,7 +83,6 @@
       }
     },
     methods: {
-      // 添加连接
       onSaveConnect() {
         if(this.editable) {
           this.$store.dispatch('EditConnect', { name: this.editedName, connection: this.connectForm })
@@ -91,6 +91,18 @@
           this.$store.dispatch('AddConnect', this.connectForm)
           this.$message.success('Created the connection successfully!')
         }
+      },
+      async onTestConnect() {
+        this.connectForm['lazyConnect'] = true
+        const handler = await Redis(this.connectForm)
+        await handler.connect().then(() => {
+          this.$message.success('Connection successfully!')
+        }).catch((e) => {
+          // test connection failed
+          this.$message.error('Connection failed!')
+        }).finally(() => {
+          handler.disconnect()
+        })
       },
       onReset() {
         this.$refs['connectForm'].resetFields()

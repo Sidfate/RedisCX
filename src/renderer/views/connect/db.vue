@@ -95,7 +95,6 @@
     },
     mounted() {
       this.searchHistory = getSearchHistory('db')
-      console.log(this.searchHistory)
     },
     methods: {
       async getDbs() {
@@ -142,7 +141,6 @@
         //   // reconnect after
         //   return Math.max(options.attempt * 100, 3000);
         // }
-        console.log(thisConnect)
 
         const handler = await Redis(thisConnect)
         this.handler = handler

@@ -77,7 +77,7 @@
           if(this.selectedName === this.targetName) {
             this.closeHandler()
           }
-          this.$store.dispatch('DelectConnect', this.targetName)
+          this.$store.dispatch('DeleteConnect', this.targetName)
           this.$router.push({path: '/dashboard'})
         })
       },

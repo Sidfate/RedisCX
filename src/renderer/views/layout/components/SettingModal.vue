@@ -1,89 +1,75 @@
 <template>
-  <el-dialog
-          title="Setting"
-          :visible.sync="settingVisible"
-          :center="true"
-          fullscreen
-  >
-    <el-tabs tab-position="left" height="100%">
-      <el-tab-pane label="Auto Search">
-        <el-form :model="settingForm"
-                 label-position="left"
-                 label-width="50%"
-                 size="small"
-                 :rules="settingFormRules"
-                 ref="settingForm"
-        >
-          <el-form-item label="Auto Search">
-            <el-switch v-model="settingForm.autoSearch"></el-switch>
-          </el-form-item>
-          <el-form-item label="Auto Search Limit" >
-            <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch"></el-input>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-      <el-tab-pane label="Cache">
-        <el-button>Clean Cache</el-button>
-      </el-tab-pane>
-    </el-tabs>
-
-
-    <!--<div slot="footer" class="dialog-footer">-->
-      <!--<el-button @click="settingFormVisible = false" size="small">Cancel</el-button>-->
-      <!--<el-button type="primary" @click="onSubmit" size="small">Save</el-button>-->
-    <!--</div>-->
-  </el-dialog>
+  <el-tabs tab-position="left" style="height: 60vh;">
+    <el-tab-pane label="Auto Search">
+      <el-form :model="settingForm"
+               label-position="left"
+               label-width="50%"
+               size="small"
+               :rules="settingFormRules"
+               ref="settingForm"
+      >
+        <el-form-item label="Auto Search">
+          <el-switch v-model="settingForm.autoSearch"></el-switch>
+        </el-form-item>
+        <el-form-item label="Auto Search Limit" >
+          <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch"></el-input>
+        </el-form-item>
+      </el-form>
+    </el-tab-pane>
+    <el-tab-pane label="Cache">
+      <div class="check-cache">
+        <el-checkbox :indeterminate="cache.isIndeterminate" v-model="cache.checkAll" @change="handleCheckAllChange">All</el-checkbox>
+        <div style="margin: 15px 0;"></div>
+        <el-checkbox-group v-model="cache.checked" @change="handleCheckedOptionsChange">
+          <el-checkbox v-for="option in cache.options" :label="option" :key="option">{{option}}</el-checkbox>
+        </el-checkbox-group>
+      </div>
+      <el-button type="danger" @click="onRestore">Clean Cache</el-button>
+    </el-tab-pane>
+  </el-tabs>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
+
   export default {
     name: "SettingModal",
-    props: [
-      'visible'
-    ],
     computed: {
       ...mapGetters([
         'autoSearch',
-        'autoSearchLimit'
+        'autoSearchLimit',
+        'cacheOptions'
       ])
-    },
-    watch: {
-      visible() {
-        this.settingVisible = this.visible
-      },
-      settingVisible() {
-        if(!this.settingVisible) {
-          this.$emit('closeModal')
-        }
-      }
     },
     mounted() {
       this.settingForm.autoSearch = this.autoSearch
       this.settingForm.autoSearchLimit = this.autoSearchLimit
-      this.settingVisible = this.visible
+      this.cache.options = this.cacheOptions
     },
     data() {
       return {
-        settingVisible: false,
         settingForm: {
           autoSearch: null,
           autoSearchLimit: null
         },
-        settingFormRules: {
-
+        settingFormRules: {},
+        cache: {
+          checkAll: false,
+          checked: ['Search history'],
+          options: ['Search history', 'Connections'],
+          isIndeterminate: true
         }
       }
     },
     methods: {
       onRestore() {
-        this.$confirm('Restore will delete all your connect and config, Are you sure to do it?', 'Warning', {
+        this.$confirm('Clean cache is irrevocable, Are you sure to continue?', 'Warning', {
           confirmButtonText: 'Yes',
           cancelButtonText: 'Cancel',
           type: 'warning'
         }).then(async () => {
-          this.$store.dispatch('CleanAllSetting')
-          this.$router.push({path: '/dashboard'})
+          // TODO: clean cache by checked options
+          this.$store.dispatch('CleanCache', this.cache.checked)
         })
       },
       onSubmit() {
@@ -101,11 +87,22 @@
 
         this.$message.success('Setting saved!')
         this.settingFormVisible = false
+      },
+      handleCheckAllChange(val) {
+        this.cache.checked = val ? this.cache.options : [];
+        this.cache.isIndeterminate = false;
+      },
+      handleCheckedOptionsChange(value) {
+        let checkedCount = value.length;
+        this.cache.checkAll = checkedCount === this.cache.options.length;
+        this.cache.isIndeterminate = checkedCount > 0 && checkedCount < this.cache.options.length;
       }
     }
   }
 </script>
 
 <style scoped>
-
+  .check-cache {
+    margin-bottom: 20px;
+  }
 </style>

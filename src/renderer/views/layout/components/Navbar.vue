@@ -15,7 +15,14 @@
       </div>
     </el-menu>
 
-    <setting-modal :visible="settingVisible" @closeModal="onCloseModal"></setting-modal>
+    <el-dialog
+            title="Setting"
+            :visible.sync="settingVisible"
+            :center="true"
+            fullscreen
+    >
+      <setting-modal></setting-modal>
+    </el-dialog>
   </div>
 </template>
 
@@ -51,9 +58,6 @@ export default {
   methods: {
     toggleSideBar() {
       this.$store.dispatch('ToggleSideBar')
-    },
-    onCloseModal() {
-      this.settingVisible = false
     }
   }
 }

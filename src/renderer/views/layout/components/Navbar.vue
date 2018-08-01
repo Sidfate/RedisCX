@@ -4,27 +4,28 @@
       <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
       <breadcrumb></breadcrumb>
 
-      <div class="avatar-container">
-        <div class="avatar-wrapper">
-          <el-dropdown>
-            <el-button type="text info" icon="el-icon-more" class="btn-setting">
-              <!--<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>-->
-            </el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item>
-                <router-link :to="{name: 'ConnectNewForm'}">
-                  <el-button type="text primary" icon="el-icon-plus">Connect</el-button>
-                </router-link>
-              </el-dropdown-item>
-              <el-dropdown-item>
-                <el-button type="text" icon="el-icon-setting" @click="settingFormVisible = true">Setting</el-button>
-              </el-dropdown-item>
-              <el-dropdown-item>
-                <el-button type="text" style="color: #E6A23C;" icon="el-icon-refresh" @click="onRestore">Restore</el-button>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-        </div>
+      <div class="header-container">
+        <router-link :to="{path: '/'}">
+          <el-button type="text" class="header-btn" style="margin-right: 10px;"><i class="fa fa-home"></i></el-button>
+        </router-link>
+        <el-dropdown>
+          <el-button type="text" class="header-btn">
+            <i class="fa fa-gear"></i>
+          </el-button>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item>
+              <router-link :to="{name: 'ConnectNewForm'}">
+                <el-button type="text primary" icon="el-icon-plus">Connect</el-button>
+              </router-link>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <el-button type="text" icon="el-icon-setting" @click="settingFormVisible = true">Setting</el-button>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <el-button type="text" style="color: #E6A23C;" icon="el-icon-refresh" @click="onRestore">Restore</el-button>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
       </div>
     </el-menu>
 
@@ -129,22 +130,16 @@ export default {
     float: left;
     padding: 0 10px;
   }
-  .screenfull {
-    position: absolute;
-    right: 90px;
-    top: 16px;
-    color: red;
-  }
-  .avatar-container {
+  .header-container {
     height: 50px;
     display: inline-block;
     position: absolute;
     right: 15px;
-    .avatar-wrapper {
-      cursor: pointer;
-      position: relative;
-      .btn-setting {
-        font-size: 24px;
+    .header-btn {
+      font-size: 20px;
+      color: #909399;
+      &:hover {
+        color: #409EFF;
       }
     }
   }

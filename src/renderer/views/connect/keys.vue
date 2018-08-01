@@ -21,15 +21,21 @@
           >
             <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
           </el-autocomplete>
+          <!--
           <el-button-group style="float: right">
             <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true"></el-button>
             <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="getKeys"></el-button>
           </el-button-group>
-        </div>
-        <template v-if="isShowAllKeys">
+          -->
           <div class="search-info" >
             {{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}
           </div>
+          <div>
+            <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="getKeys"></el-button>
+            <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true">Create a new key</el-button>
+          </div>
+        </div>
+        <template v-if="isShowAllKeys">
           <el-table :data="keys" fit highlight-current-row style="margin: 15px 0;clear: both;" size="small">
             <el-table-column label="key">
               <template slot-scope="scope">

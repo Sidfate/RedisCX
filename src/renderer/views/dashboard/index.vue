@@ -18,6 +18,7 @@
 
       <div class="info-container">
         <span class="display_name">RedisCX</span>
+        <span style="font-size:20px;padding-top:20px;display:inline-block;">Created by Sidfate</span>
       </div>
     </div>
   </div>
@@ -59,8 +60,8 @@
       text-align: center;
       position: relative;
       height: 150px;
-      line-height: 200px;
       .display_name {
+        display: block;
         font-size: 48px;
         line-height: 48px;
         color: #212121;

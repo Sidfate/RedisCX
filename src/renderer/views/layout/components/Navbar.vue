@@ -30,7 +30,7 @@
 import { mapGetters } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
-import SettingModal from './SettingModal'
+import SettingModal from '@/components/Modal/SettingModal'
 
 export default {
   components: {

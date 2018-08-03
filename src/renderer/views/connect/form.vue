@@ -84,13 +84,19 @@
     },
     methods: {
       onSaveConnect() {
-        if(this.editable) {
-          this.$store.dispatch('EditConnect', { name: this.editedName, connection: this.connectForm })
-          this.$message.success('Updated the connection successfully!')
-        } else {
-          this.$store.dispatch('AddConnect', this.connectForm)
-          this.$message.success('Created the connection successfully!')
-        }
+        this.$refs['connectForm'].validate((valid) => {
+          if (valid) {
+            if(this.editable) {
+              this.$store.dispatch('EditConnect', { name: this.editedName, connection: this.connectForm })
+              this.$message.success('Updated the connection successfully!')
+            } else {
+              this.$store.dispatch('AddConnect', Object.assign({}, this.connectForm))
+              this.$message.success('Created the connection successfully!')
+            }
+          } else {
+            return false
+          }
+        })
       },
       async onTestConnect() {
         this.connectForm['lazyConnect'] = true

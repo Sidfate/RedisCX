@@ -1,12 +1,5 @@
 <template>
   <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Scanning...">
-    <div class="header-container">
-      <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 10px;display: inline-block">
-        <el-breadcrumb-item :to="{name: 'DB', params: { name: selectedName }}">{{ selectedName }}</el-breadcrumb-item>
-        <el-breadcrumb-item>{{ 'db'+this.$route.params['db']+'('+dbSize+')' }}</el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
-
     <el-tabs v-model="activeKey" @edit="handleTabsEdit">
       <el-tab-pane label="Keys" name="keys" :closable="false">
         <div class="filter-container">

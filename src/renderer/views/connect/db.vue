@@ -24,7 +24,12 @@
             size="mini"
             :default-sort="{prop: 'db'}"
             fit highlight-current-row
+            @selection-change="handleSelectionChange"
     >
+      <el-table-column
+              type="selection"
+              width="55">
+      </el-table-column>
       <el-table-column
               prop="db"
               label="DB"
@@ -36,25 +41,25 @@
               label="Size"
               sortable>
       </el-table-column>
-      <el-table-column
-              label="Operation"
-              width="120">
-        <template slot-scope="scope">
-          <router-link :to="{name: 'Keys', params: { db: scope.row.db }}">
-            <el-button
-                    type="text"
-                    size="small">
-              Select
-            </el-button>
-          </router-link>
-          <el-button
-                  @click="onFlush(scope.row.db)"
-                  type="text"
-                  size="small" style="color: #F56C6C;">
-            Flush
-          </el-button>
-        </template>
-      </el-table-column>
+      <!--<el-table-column-->
+              <!--label="Operation"-->
+              <!--width="120">-->
+        <!--<template slot-scope="scope">-->
+          <!--<router-link :to="{name: 'Keys', params: { db: scope.row.db }}">-->
+            <!--<el-button-->
+                    <!--type="text"-->
+                    <!--size="small">-->
+              <!--Select-->
+            <!--</el-button>-->
+          <!--</router-link>-->
+          <!--<el-button-->
+                  <!--@click="onFlush(scope.row.db)"-->
+                  <!--type="text"-->
+                  <!--size="small" style="color: #F56C6C;">-->
+            <!--Flush-->
+          <!--</el-button>-->
+        <!--</template>-->
+      <!--</el-table-column>-->
     </el-table>
   </div>
 </template>
@@ -86,7 +91,8 @@
           number: null
         },
         loadingDbs: false,
-        handler: null
+        handler: null,
+        multipleSelection: []
       }
     },
     async created() {
@@ -182,6 +188,9 @@
         }) : searchHistory;
         cb(results);
       },
+      handleSelectionChange(val) {
+        this.multipleSelection = val;
+      }
     }
   }
 </script>

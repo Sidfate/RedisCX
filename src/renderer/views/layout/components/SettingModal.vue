@@ -1,32 +1,34 @@
 <template>
-  <el-tabs tab-position="left" style="height: 60vh;">
-    <el-tab-pane label="Auto Search">
-      <el-form :model="settingForm"
-               label-position="left"
-               label-width="50%"
-               size="small"
-               :rules="settingFormRules"
-               ref="settingForm"
-      >
-        <el-form-item label="Auto Search">
-          <el-switch v-model="settingForm.autoSearch"></el-switch>
-        </el-form-item>
-        <el-form-item label="Auto Search Limit" >
-          <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch"></el-input>
-        </el-form-item>
-      </el-form>
-    </el-tab-pane>
-    <el-tab-pane label="Cache">
-      <div class="check-cache">
-        <el-checkbox :indeterminate="cache.isIndeterminate" v-model="cache.checkAll" @change="handleCheckAllChange">All</el-checkbox>
-        <div style="margin: 15px 0;"></div>
-        <el-checkbox-group v-model="cache.checked" @change="handleCheckedOptionsChange">
-          <el-checkbox v-for="option in cache.options" :label="option" :key="option">{{option}}</el-checkbox>
-        </el-checkbox-group>
-      </div>
-      <el-button type="danger" @click="onRestore">Clean Cache</el-button>
-    </el-tab-pane>
-  </el-tabs>
+  <div>
+    <el-tabs tab-position="left" style="height: 60vh;">
+      <el-tab-pane label="Auto Search">
+        <el-form :model="settingForm"
+                 label-position="left"
+                 label-width="50%"
+                 size="small"
+                 :rules="settingFormRules"
+                 ref="settingForm"
+        >
+          <el-form-item label="Auto Search">
+            <el-switch v-model="settingForm.autoSearch"></el-switch>
+          </el-form-item>
+          <el-form-item label="Auto Search Limit" >
+            <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch"></el-input>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
+      <el-tab-pane label="Cache">
+        <div class="check-cache">
+          <el-checkbox :indeterminate="cache.isIndeterminate" v-model="cache.checkAll" @change="handleCheckAllChange">All</el-checkbox>
+          <div style="margin: 15px 0;"></div>
+          <el-checkbox-group v-model="cache.checked" @change="handleCheckedOptionsChange">
+            <el-checkbox v-for="option in cache.options" :label="option" :key="option">{{option}}</el-checkbox>
+          </el-checkbox-group>
+        </div>
+        <el-button type="danger" @click="onRestore">Clean Cache</el-button>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
 </template>
 
 <script>

@@ -27,13 +27,9 @@
 <script>
   import {mapGetters} from 'vuex'
   import {shell} from 'electron'
-  import PanThumb from '@/components/PanThumb'
 
   export default {
     name: 'dashboard',
-    components: {
-      PanThumb
-    },
     computed: {
       ...mapGetters([]),
       avatar() {

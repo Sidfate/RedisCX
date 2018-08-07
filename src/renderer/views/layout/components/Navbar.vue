@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <el-header style="padding: 0;height: 50px;">
     <el-menu class="navbar" mode="horizontal">
       <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
       <breadcrumb></breadcrumb>
@@ -23,17 +23,19 @@
     >
       <setting-modal></setting-modal>
     </el-dialog>
-  </div>
+  </el-header>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
-import SettingModal from '@/components/Modal/SettingModal'
+import SettingModal from './SettingModal'
+import ElHeader from "element-ui/packages/header/src/main";
 
 export default {
   components: {
+    ElHeader,
     Breadcrumb,
     Hamburger,
     SettingModal
@@ -57,7 +59,7 @@ export default {
   },
   methods: {
     toggleSideBar() {
-      this.$store.dispatch('ToggleSideBar')
+      // this.$store.dispatch('ToggleSideBar')
     }
   }
 }

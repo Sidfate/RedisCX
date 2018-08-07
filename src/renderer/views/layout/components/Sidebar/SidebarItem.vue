@@ -1,16 +1,16 @@
 <template>
   <div class="menu-wrapper">
     <router-link :to="{name: 'ConnectNewForm'}" >
-      <el-menu-item index="0" key="0" class="submenu-title-noDropdown new-connection">
-      <svg-icon icon-class="add"></svg-icon>
-      <span slot="title">New Connection</span>
+      <el-menu-item index="0" key="0" class="new-connection">
+        <i class="el-icon-circle-plus-outline"></i>
+        <span slot="title">New Connection</span>
       </el-menu-item>
     </router-link>
 
     <template v-for="item in connectMap">
       <router-link :to="{name: 'DB', params: { name: item.connectionName }}" :key="item.connectionName" @contextmenu.native="onOpenMenu(item.connectionName)">
-        <el-menu-item :index="item.connectionName" :key="item.connectionName" class="submenu-title-noDropdown">
-          <svg-icon icon-class="example"></svg-icon>
+        <el-menu-item :index="item.connectionName" :key="item.connectionName">
+          <i class="el-icon-location"></i>
           <span slot="title">{{ item.connectionName }}</span>
         </el-menu-item>
       </router-link>
@@ -100,5 +100,6 @@
   .new-connection {
     height: 50px;
     line-height: 50px;
+    background: #E6A23C;
   }
 </style>

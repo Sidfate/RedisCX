@@ -31,7 +31,7 @@ export default {
       if(name === 'Keys') {
         this.breadList.push({
           key: 'keys',
-          title: 'db'+this.$route.params['db'],
+          title: 'db('+this.$route.params['db']+')',
           path: this.$route.path
         })
         return

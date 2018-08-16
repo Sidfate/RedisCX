@@ -1,7 +1,7 @@
 <template>
   <el-header style="padding: 0;height: 50px;">
     <el-menu class="navbar" mode="horizontal">
-      <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
+      <!--<hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>-->
       <breadcrumb></breadcrumb>
 
       <div class="header-container">

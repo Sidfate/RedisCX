@@ -13,9 +13,14 @@
       >
         <el-button slot="append" icon="el-icon-search" @click="onFilter"></el-button>
       </el-autocomplete>
-      <el-button-group style="float: right">
-        <el-button class="filter-item" type="warning" size="small" icon="el-icon-refresh" @click="getDbs"></el-button>
-      </el-button-group>
+      <!--<el-button-group style="float: right">-->
+        <!--<el-button class="filter-item" type="warning" size="small" icon="el-icon-refresh" @click="getDbs"></el-button>-->
+      <!--</el-button-group>-->
+
+      <div class="operation-container">
+        <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" @click="onBatchFlush" :disabled="batchStatus">Flush</el-button>
+        <el-button class="filter-item" type="warning" size="mini" icon="el-icon-refresh" @click="getDbs">Refresh</el-button>
+      </div>
     </div>
 
     <el-table
@@ -25,6 +30,8 @@
             :default-sort="{prop: 'db'}"
             fit highlight-current-row
             @selection-change="handleSelectionChange"
+            @row-contextmenu="onOpenMenu"
+            @row-dblclick="onSelectDb"
     >
       <el-table-column
               type="selection"
@@ -68,6 +75,7 @@
   import {mapGetters} from 'vuex'
   import { getSearchHistory, addSearchHistory } from '@/utils/localStore'
   import Redis from 'ioredis'
+  import {remote} from 'electron'
 
   export default {
     name: "DB",
@@ -77,11 +85,23 @@
       ]),
       selectedName() {
         return this.$route.params['name']
+      },
+      menu() {
+        const {Menu, MenuItem} = remote
+
+        const menu = new Menu()
+        menu.append(new MenuItem({label: 'Select', click: this.onSelectDb}))
+        menu.append(new MenuItem({type: 'separator'}))
+        menu.append(new MenuItem({label: 'Flush', click: this.onFlush}))
+        return menu
       }
     },
     watch: {
       // 如果路由有变化，会再次执行该方法
-      '$route': 'getDbs'
+      '$route': 'getDbs',
+      multipleSelection(val) {
+          this.batchStatus = (val.length === 0)
+      }
     },
     data() {
       return {
@@ -92,7 +112,9 @@
         },
         loadingDbs: false,
         handler: null,
-        multipleSelection: []
+        multipleSelection: [],
+        selectedDb: null,
+        batchStatus: true
       }
     },
     async created() {
@@ -168,7 +190,8 @@
           this.searchHistory = searchHistory
         }
       },
-      async onFlush(db) {
+      async onFlush() {
+        const db = this.selectedDb
         this.$confirm('Are you sure to flush this db?', 'Warning', {
           confirmButtonText: 'Yes',
           cancelButtonText: 'Cancel',
@@ -185,11 +208,24 @@
         const searchHistory = this.searchHistory
         let results = queryString ? searchHistory.filter((search) => {
           return (search.value.indexOf(queryString.toLowerCase()) === 0)
-        }) : searchHistory;
-        cb(results);
+        }) : searchHistory
+        cb(results)
       },
       handleSelectionChange(val) {
-        this.multipleSelection = val;
+        this.multipleSelection = val
+      },
+      onOpenMenu(row) {
+        this.selectedDb = row.db
+        this.menu.popup(remote.getCurrentWindow())
+      },
+      onSelectDb(row) {
+        const db = row ? row.db : this.selectedDb
+        this.$router.push({
+          name: 'Keys', params: { db }
+        })
+      },
+      async onBatchFlush() {
+
       }
     }
   }

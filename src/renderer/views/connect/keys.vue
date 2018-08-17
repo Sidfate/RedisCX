@@ -1,55 +1,67 @@
 <template>
-  <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Scanning...">
+  <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Scanning..." style="padding-top: 10px;">
     <el-tabs v-model="activeKey" @edit="handleTabsEdit">
       <el-tab-pane label="Keys" name="keys" :closable="false">
-        <div class="filter-container">
-          <el-autocomplete
-                  class="inline-input"
-                  v-model="listQuery.key"
-                  :fetch-suggestions="querySearch"
-                  placeholder="search for key"
-                  @keyup.enter.native="handleFilter"
-                  size="small"
-                  style="width: 200px;"
-          >
-            <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
-          </el-autocomplete>
           <!--
           <el-button-group style="float: right">
             <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true"></el-button>
             <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="getKeys"></el-button>
           </el-button-group>
           -->
-          <div class="search-info" >
-            {{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}
-          </div>
-          <div class="operation-container">
-            <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" >Delete</el-button>
-            <el-button class="filter-item" size="mini" type="warning" icon="el-icon-refresh" @click="getKeys">Refresh</el-button>
-            <el-button type="primary" size="mini" icon="el-icon-plus" @click="keyFormVisible = true">Create a new key</el-button>
+          <!--<div class="search-info" >-->
+            <!--{{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}-->
+          <!--</div>-->
+        <div class="operation-container">
+          <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" :disabled="batchStatus">Delete</el-button>
+          <!--<el-button class="filter-item" size="mini" type="warning" icon="el-icon-refresh" @click="getKeys">Refresh</el-button>-->
+          <el-button type="primary" size="mini" icon="el-icon-plus" @click="keyFormVisible = true">Create a new key</el-button>
+
+          <div class="search-container">
+            <el-autocomplete
+                    class="inline-input"
+                    v-model="listQuery.key"
+                    :fetch-suggestions="querySearch"
+                    placeholder="search for key"
+                    @keyup.enter.native="handleFilter"
+                    size="mini"
+            >
+              <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
+            </el-autocomplete>
           </div>
         </div>
         <template v-if="isShowAllKeys">
-          <el-table :data="keys" fit highlight-current-row style="margin: 15px 0;clear: both;" size="small">
+          <el-table :data="keys"
+                    fit highlight-current-row
+                    style="margin: 15px 0;clear: both;"
+                    size="small"
+                    @row-contextmenu="onOpenMenu"
+                    @row-dblclick="onShowValue"
+                    @selection-change="handleSelectionChange"
+                    :header-cell-style="{background: '#f5f7fa'}"
+          >
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
             <el-table-column label="key">
               <template slot-scope="scope">
-                <el-button type="text" @click="onShowValue(scope.row)">{{scope.row}}</el-button>
+                {{scope.row}}
               </template>
             </el-table-column>
-            <el-table-column label="Operation" width="100">
-              <template slot-scope="scope">
-                <el-button type="text" size="mini" style="color: #F56C6C;" @click="onDeleteKey(scope.row)">Delete</el-button>
-              </template>
-            </el-table-column>
+            <!--<el-table-column label="Operation" width="100">-->
+              <!--<template slot-scope="scope">-->
+                <!--<el-button type="text" size="mini" style="color: #F56C6C;" @click="onDeleteKey(scope.row)">Delete</el-button>-->
+              <!--</template>-->
+            <!--</el-table-column>-->
           </el-table>
 
           <div class="pagination-container">
-            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="total, prev, pager, next, jumper" :total="total">
+            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="prev, pager, next" :total="total">
             </el-pagination>
           </div>
         </template>
       </el-tab-pane>
-      <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel()" :name="key" :key="key" closable>
+      <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel" :name="key" :key="key" closable>
         <key-tap :one-key="key" @handleTabsEdit="handleTabsEdit"></key-tap>
       </el-tab-pane>
     </el-tabs>
@@ -89,6 +101,7 @@
   import {mapGetters} from 'vuex'
   import { KeyTap } from './components'
   import { formatString } from "@/utils"
+  import {remote} from 'electron'
   import { getSearchHistory, addSearchHistory } from '@/utils/localStore'
 
   export default {
@@ -102,7 +115,21 @@
         'selectedName',
         'autoSearch',
         'autoSearchLimit'
-      ])
+      ]),
+      menu() {
+        const {Menu, MenuItem} = remote
+
+        const menu = new Menu()
+        menu.append(new MenuItem({label: 'Open', click: this.onShowValue}))
+        menu.append(new MenuItem({type: 'separator'}))
+        menu.append(new MenuItem({label: 'Delete', click: this.onFlush}))
+        return menu
+      }
+    },
+    watch: {
+      multipleSelection(val) {
+        this.batchStatus = (val.length === 0)
+      }
     },
     filters: {
       getKeyLabel(key) {
@@ -132,12 +159,14 @@
         keys: [],
         allKeys: [],
         selectedKeys: [],
+        selectedKey: null,
         listQuery: {
           key: '',
           count: 10000,
           pageSize: 1000,
           pageIndex: 1
         },
+        multipleSelection: [],
         activeKey: 'keys',
         isShowAllKeys: false,
         loadingKeys: false,
@@ -164,6 +193,7 @@
           'set',
           'list'
         ],
+        batchStatus: true
       }
     },
     async created() {
@@ -259,15 +289,16 @@
         }
       },
       // 获取key的值
-      async onShowValue(key) {
+      async onShowValue(target) {
+        let key = this.selectedKey ? this.selectedKey : target;
         this.activeKey = key
         let index = this.selectedKeys.indexOf(key)
-        console.log(index)
         if(index === -1) {
           this.selectedKeys.push(key)
         }else {
           this.$set(this.selectedKeys, index, key)
         }
+        this.selectedKey = null
       },
       handleCurrentChange(val) {
         this.loadingKeys = true
@@ -372,6 +403,13 @@
         // 调用 callback 返回建议列表的数据
         cb(results);
       },
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+      onOpenMenu(row) {
+        this.selectedKey = row
+        this.menu.popup(remote.getCurrentWindow())
+      }
     }
   }
 </script>

@@ -105,7 +105,7 @@
           this.$message.success('Connection successfully!')
         }).catch((e) => {
           // test connection failed
-          this.$message.error('Connection failed!')
+          this.$message.error(e.message)
         }).finally(() => {
           handler.disconnect()
         })

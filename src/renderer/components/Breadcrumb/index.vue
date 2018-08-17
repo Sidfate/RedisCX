@@ -5,6 +5,7 @@
         <router-link :to="item.path">{{ item.title }}</router-link>
       </el-breadcrumb-item>
     </transition-group>
+    <el-button v-if="breadList.length !== 0" type="text" size="mini" icon="el-icon-refresh" @click="onRefresh" class="refresh-btn"></el-button>
   </el-breadcrumb>
 </template>
 
@@ -25,13 +26,15 @@ export default {
   },
   methods: {
     getBreadcrumb() {
-      console.log(this.$route)
       const name = this.$route.name
 
       if(name === 'Keys') {
+        if(this.breadList.length > 1) {
+          return
+        }
         this.breadList.push({
           key: 'keys',
-          title: 'db('+this.$route.params['db']+')',
+          title: 'DB-'+this.$route.params['db'],
           path: this.$route.path
         })
         return
@@ -46,6 +49,17 @@ export default {
       }
 
       this.breadList = []
+    },
+    onRefresh() {
+      console.log('refresh')
+      let route = Object.assign({}, this.$route)
+      route.query['date'] = new Date()
+      this.$router.push({
+        path: route.path,
+        query: {
+          t: +new Date()
+        }
+      })
     }
   }
 }
@@ -54,12 +68,16 @@ export default {
 <style rel="stylesheet/scss" lang="scss" scoped>
   .app-breadcrumb.el-breadcrumb {
     display: inline-block;
-    font-size: 14px;
+    font-size: 18px;
     line-height: 50px;
     margin-left: 10px;
     .no-redirect {
       color: #97a8be;
       cursor: text;
+    }
+    .refresh-btn {
+      font-size: 14px;
+      margin-left: 5px;
     }
   }
 </style>

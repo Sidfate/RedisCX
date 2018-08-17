@@ -10,7 +10,7 @@
     <template v-for="item in connectMap">
       <router-link :to="{name: 'DB', params: { name: item.connectionName }}" :key="item.connectionName" @contextmenu.native="onOpenMenu(item.connectionName)">
         <el-menu-item :index="item.connectionName" :key="item.connectionName">
-          <i class="el-icon-location"></i>
+          <i class="el-icon-tickets"></i>
           <span slot="title">{{ item.connectionName }}</span>
         </el-menu-item>
       </router-link>

@@ -1,7 +1,8 @@
 <template>
   <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Scanning..." style="padding-top: 10px;">
-    <el-tabs v-model="activeKey" @edit="handleTabsEdit">
-      <el-tab-pane label="Keys" name="keys" :closable="false">
+    <el-tabs v-model="activeKey" @edit="handleTabsEdit" type="border-card">
+      <el-tab-pane name="keys" :closable="false">
+        <span slot="label"><i class="el-icon-location"></i> Keys</span>
           <!--
           <el-button-group style="float: right">
             <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true"></el-button>
@@ -12,8 +13,7 @@
             <!--{{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}-->
           <!--</div>-->
         <div class="operation-container">
-          <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" :disabled="batchStatus">Delete</el-button>
-          <!--<el-button class="filter-item" size="mini" type="warning" icon="el-icon-refresh" @click="getKeys">Refresh</el-button>-->
+          <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" :disabled="!batchStatus" @click="onBatchDeleteKeys">Delete</el-button>
           <el-button type="primary" size="mini" icon="el-icon-plus" @click="keyFormVisible = true">Create a new key</el-button>
 
           <div class="search-container">
@@ -35,7 +35,7 @@
                     style="margin: 15px 0;clear: both;"
                     size="small"
                     @row-contextmenu="onOpenMenu"
-                    @row-dblclick="onShowValue"
+                    @row-dblclick="onShowValueByDblclick"
                     @selection-change="handleSelectionChange"
                     :header-cell-style="{background: '#f5f7fa'}"
           >
@@ -56,7 +56,7 @@
           </el-table>
 
           <div class="pagination-container">
-            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="prev, pager, next" :total="total">
+            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="prev, pager, next, total" :total="total">
             </el-pagination>
           </div>
         </template>
@@ -103,6 +103,8 @@
   import { formatString } from "@/utils"
   import {remote} from 'electron'
   import { getSearchHistory, addSearchHistory } from '@/utils/localStore'
+  import _ from 'lodash'
+  import Redis from 'ioredis'
 
   export default {
     name: "Keys",
@@ -120,15 +122,15 @@
         const {Menu, MenuItem} = remote
 
         const menu = new Menu()
-        menu.append(new MenuItem({label: 'Open', click: this.onShowValue}))
+        menu.append(new MenuItem({label: 'Open', click: this.onShowValueByMenu}))
         menu.append(new MenuItem({type: 'separator'}))
-        menu.append(new MenuItem({label: 'Delete', click: this.onFlush}))
+        menu.append(new MenuItem({label: 'Delete', click: this.onDeleteKeyByMenu}))
         return menu
       }
     },
     watch: {
       multipleSelection(val) {
-        this.batchStatus = (val.length === 0)
+        this.batchStatus = (val.length >= 0)
       }
     },
     filters: {
@@ -193,7 +195,7 @@
           'set',
           'list'
         ],
-        batchStatus: true
+        batchStatus: false
       }
     },
     async created() {
@@ -289,8 +291,15 @@
         }
       },
       // 获取key的值
-      async onShowValue(target) {
-        let key = this.selectedKey ? this.selectedKey : target;
+      onShowValueByMenu() {
+        if(_.isNull(this.selectedKey)) {
+          return
+        }
+
+        this.showValue(this.selectedKey)
+        this.selectedKey = null
+      },
+      showValue(key) {
         this.activeKey = key
         let index = this.selectedKeys.indexOf(key)
         if(index === -1) {
@@ -298,7 +307,9 @@
         }else {
           this.$set(this.selectedKeys, index, key)
         }
-        this.selectedKey = null
+      },
+      onShowValueByDblclick(row) {
+        this.showValue(row)
       },
       handleCurrentChange(val) {
         this.loadingKeys = true
@@ -400,7 +411,6 @@
         let results = queryString ? searchHistory.filter((search) => {
           return (search.value.indexOf(queryString.toLowerCase()) === 0)
         }) : searchHistory;
-        // 调用 callback 返回建议列表的数据
         cb(results);
       },
       handleSelectionChange(val) {
@@ -409,6 +419,55 @@
       onOpenMenu(row) {
         this.selectedKey = row
         this.menu.popup(remote.getCurrentWindow())
+      },
+      async onDeleteKeyByMenu() {
+        this.$confirm('Are you sure to delete this key?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.deleteKey([this.selectedKey])) {
+            this.$message.success('Delete the key successfully!')
+          }
+        })
+      },
+      async onBatchDeleteKeys() {
+        this.$confirm('Are you sure to delete these keys?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.deleteKey(this.multipleSelection)) {
+            this.$message.success('Delete keys successfully!')
+          }
+        })
+
+      },
+      async deleteKey(keys) {
+        if(!_.isArray(keys) || _.isEmpty(keys)) {
+          return false
+        }
+
+        let status = false
+        const handler = this.handler
+        let pipeline = handler.pipeline()
+        keys.forEach((key) => {
+          pipeline.del(key)
+        })
+        await pipeline.exec().then((results) => {
+          let error = _.find(results, (o)=> (o[0] instanceof Redis.ReplyError))
+
+          if(error) {
+            this.$message.error(error[0].message)
+          }else {
+            keys.forEach((key) => {
+              this.handleTabsEdit(key, 'remove')
+            })
+            status = true
+          }
+        })
+
+        return status
       }
     }
   }

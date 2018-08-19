@@ -1,7 +1,7 @@
 <template>
   <div class="app-container" v-loading.body="loadingDbs" element-loading-text="connecting...">
     <div class="operation-container">
-      <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" @click="onBatchFlush" :disabled="batchStatus">Flush</el-button>
+      <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" @click="onBatchFlushDbs" :disabled="!batchStatus">Flush</el-button>
 
       <div class="search-container">
         <el-autocomplete
@@ -69,7 +69,7 @@
         const menu = new Menu()
         menu.append(new MenuItem({label: 'Select', click: this.onSelectDbByMenu}))
         menu.append(new MenuItem({type: 'separator'}))
-        menu.append(new MenuItem({label: 'Flush', click: this.onFlush}))
+        menu.append(new MenuItem({label: 'Flush', click: this.onFlushDbByMenu}))
 
         return menu
       }
@@ -78,7 +78,7 @@
       // 如果路由有变化，会再次执行该方法
       '$route': 'getDbs',
       multipleSelection(val) {
-          this.batchStatus = (val.length === 0)
+          this.batchStatus = (val.length > 0)
       }
     },
     data() {
@@ -92,7 +92,7 @@
         handler: null,
         multipleSelection: [],
         selectedDb: null,
-        batchStatus: true
+        batchStatus: false
       }
     },
     async created() {
@@ -163,38 +163,33 @@
           this.searchHistory = searchHistory
         }
       },
-      async onFlush() {
-        const db = this.selectedDb
-        this.$confirm('Are you sure to flush this db?', 'Warning', {
-          confirmButtonText: 'Yes',
-          cancelButtonText: 'Cancel',
-          type: 'warning'
-        }).then(async () => {
-          await this.flushDb([db])
-        })
-        this.selectedDb = null
-      },
       async flushDb(dbs) {
         if(!_.isArray(dbs) || _.isEmpty(dbs)) {
-          return
+          return false
         }
 
+        let status = false
         const handler = this.handler
         let pipeline = handler.pipeline()
+        console.log(dbs)
         dbs.forEach((db) => {
           pipeline.select(db)
           pipeline.flushdb()
-          this.$set(this.dbList, db, {db, size: 0})
         })
-        await pipeline.exec((err, results) => {
+        await pipeline.exec().then((results) => {
           let error = _.find(results, (o)=> (o[0] instanceof Redis.ReplyError))
 
           if(error) {
             this.$message.error(error[0].message)
           }else {
-            this.$message.success('Flush db successfully!')
+            dbs.forEach((db)=> {
+              this.$set(this.dbList, db, {db, size: 0})
+            })
+            status = true
           }
         })
+
+        return status
       },
       querySearch(queryString, cb) {
         const searchHistory = this.searchHistory
@@ -221,7 +216,23 @@
           name: 'Keys', params: { db }
         })
       },
-      async onBatchFlush() {
+      async onFlushDbByMenu() {
+        if(_.isNull(this.selectedDb)) {
+          return
+        }
+        this.$confirm('Are you sure to flush this db?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.flushDb([this.selectedDb])) {
+            this.$message.success('Flush the db successfully!')
+          }
+        }).finally(() => {
+          this.selectedDb = null
+        })
+      },
+      async onBatchFlushDbs() {
         if(_.isEmpty(this.multipleSelection)) {
           return
         }
@@ -231,7 +242,9 @@
           cancelButtonText: 'Cancel',
           type: 'warning'
         }).then(async () => {
-          await this.flushDb(this.multipleSelection.map((item) => item.db))
+          if(await this.flushDb(this.multipleSelection.map((item) => item.db))) {
+            this.$message.success('Flush dbs successfully!')
+          }
         })
       }
     }

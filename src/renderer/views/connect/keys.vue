@@ -3,16 +3,11 @@
     <el-tabs v-model="activeKey" @edit="handleTabsEdit" type="border-card">
       <el-tab-pane name="keys" :closable="false">
         <span slot="label"><i class="el-icon-location"></i> Keys</span>
-          <!--
-          <el-button-group style="float: right">
-            <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true"></el-button>
-            <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="getKeys"></el-button>
-          </el-button-group>
-          -->
-          <!--<div class="search-info" >-->
-            <!--{{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}-->
-          <!--</div>-->
         <div class="operation-container">
+          <el-alert
+                  :title="searchTitle"
+                  type="success" style="margin-bottom: 10px">
+          </el-alert>
           <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" :disabled="!batchStatus" @click="onBatchDeleteKeys">Delete</el-button>
           <el-button type="primary" size="mini" icon="el-icon-plus" @click="keyFormVisible = true">Create a new key</el-button>
 
@@ -56,7 +51,7 @@
           </el-table>
 
           <div class="pagination-container">
-            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="prev, pager, next, total" :total="total">
+            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="prev, pager, next" :total="total">
             </el-pagination>
           </div>
         </template>
@@ -130,7 +125,7 @@
     },
     watch: {
       multipleSelection(val) {
-        this.batchStatus = (val.length >= 0)
+        this.batchStatus = (val.length > 0)
       }
     },
     filters: {
@@ -140,7 +135,6 @@
     },
     mounted() {
       this.searchHistory = getSearchHistory('keys')
-      console.log(this.searchHistory)
     },
     data() {
       let checkJson = (rule, value, callback) => {
@@ -174,7 +168,6 @@
         loadingKeys: false,
         total: 0,
         dbSize: 0,
-        searchTime: 0,
         keyFormVisible: false,
         keyForm: {
           key: '',
@@ -195,7 +188,8 @@
           'set',
           'list'
         ],
-        batchStatus: false
+        batchStatus: false,
+        searchTitle: ''
       }
     },
     async created() {
@@ -218,8 +212,10 @@
         const startTime = Math.round(new Date().getTime())
         let allKeys = await this.scan(handler, key, count)
         const endTime = Math.round(new Date().getTime())
-        console.log("scan 所用时间"+ ((endTime-startTime)/1000).toFixed(2))
-        this.searchTime = ((endTime-startTime)/1000).toFixed(2)
+        const searchTime = ((endTime-startTime)/1000).toFixed(2)
+        let searchTitle = key === '*' ? 'Searched for all keys ' : 'Searched for ['+this.listQuery.key+']'
+        searchTitle += ', total '+allKeys.length+', used time '+searchTime+'s.'
+        this.searchTitle = searchTitle
 
         this.total = allKeys.length
         this.allKeys = allKeys
@@ -392,11 +388,12 @@
               this.$message.warning(e.message)
               return
             }
-            this.keyFormVisible = false;
+            this.keys.unshift(this.keyForm.key)
+            this.keyFormVisible = false
             this.onClearForm()
             this.$message.success('Created a new key successfully!')
           } else {
-            console.log('error submit!!');
+            console.log('error submit!!')
             return false;
           }
         })
@@ -437,11 +434,12 @@
           cancelButtonText: 'Cancel',
           type: 'warning'
         }).then(async () => {
+          console.log(this.multipleSelection)
           if(await this.deleteKey(this.multipleSelection)) {
             this.$message.success('Delete keys successfully!')
+            this.multipleSelection = []
           }
         })
-
       },
       async deleteKey(keys) {
         if(!_.isArray(keys) || _.isEmpty(keys)) {
@@ -456,12 +454,15 @@
         })
         await pipeline.exec().then((results) => {
           let error = _.find(results, (o)=> (o[0] instanceof Redis.ReplyError))
-
+          console.log(results)
           if(error) {
             this.$message.error(error[0].message)
           }else {
             keys.forEach((key) => {
               this.handleTabsEdit(key, 'remove')
+            })
+            this.keys = this.keys.filter((key) => {
+              return keys.indexOf(key) === -1
             })
             status = true
           }
@@ -474,14 +475,5 @@
 </script>
 
 <style scoped>
-  .search-info {
-    clear: both;
-    font-size: 12px;
-    color: #909399;
-    margin-top: 10px;
-    /*float: right;*/
-  }
-  .el-form-item--small.el-form-item {
-    margin-bottom: 10px;
-  }
+
 </style>

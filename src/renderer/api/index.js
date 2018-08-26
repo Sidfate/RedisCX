@@ -49,6 +49,10 @@ export default class Factory {
     return await this.element.batchDelete(list)
   }
 
+  async save(element) {
+    return await this.element.save(element)
+  }
+
   async getType() {
     return this.type
   }

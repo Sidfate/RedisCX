@@ -2,12 +2,14 @@
 import Element from './Element'
 
 export default class SetElement extends Element {
-  async delete() {
-
+  async save(element) {
+    if(element.rawValue) {
+      await this.handler.srem(this.key, element.rawValue)
+    }
+    await this.handler.sadd(this.key, element.value)
   }
 
   async batchDelete(list) {
-    console.log(list)
     let pipeline = this.handler.pipeline()
 
     list.forEach((item) => {

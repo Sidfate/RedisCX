@@ -2,16 +2,19 @@
 import Element from './Element'
 
 export default class HashElement extends Element {
-  async add(field, value) {
-    await this.handler.hset(this.key, field, value)
+
+  async save(element) {
+    await this.handler.hset(this.key, element.key, element.value)
   }
 
-  async set(field, value) {
-    await this.handler.hset(this.key, field, value)
-  }
+  async batchDelete(list) {
+    let pipeline = this.handler.pipeline()
 
-  async delete(field) {
-    await this.handler.hdel(this.key, field)
+    list.forEach((item) => {
+      pipeline.hdel(this.key, item.key)
+    })
+
+    return this.exec(pipeline)
   }
 
   async scan(search) {

@@ -32,10 +32,10 @@ export default {
   },
   mounted() {
     this.jsonEditor = CodeMirror.fromTextArea(this.$refs.textarea, {
-      lineNumbers: true,
+      lineNumbers: false,
       mode: 'application/json',
       gutters: ['CodeMirror-lint-markers'],
-      theme: 'rubyblue',
+      theme: 'default',
       lint: true
     })
 
@@ -62,10 +62,10 @@ export default {
 }
 .json-editor >>> .CodeMirror {
   height: auto;
-  min-height: 300px;
+  min-height: 200px;
 }
 .json-editor >>> .CodeMirror-scroll{
-  min-height: 300px;
+  min-height: 200px;
 }
 .json-editor >>> .cm-s-rubyblue span.cm-string {
   color: #F08047;

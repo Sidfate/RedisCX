@@ -26,7 +26,6 @@ export default class Element {
       })
 
       stream.on('data', function (resultKeys) {
-        console.log(resultKeys)
         allKeys.push(resultKeys)
       })
       stream.on('end', function () {

@@ -365,7 +365,8 @@
   }
   .info-container {
     padding: 0 10px 0 0;
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 120px;
     .info-title {
       font-weight: 700;
       font-size: 16px;
@@ -399,6 +400,7 @@
   .value-container {
     /*width: 100%;*/
     min-width: 500px;
+    flex: 2 1 auto;
     padding-left: 10px;
     display: flex;
     flex-direction: column;

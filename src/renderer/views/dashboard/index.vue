@@ -50,7 +50,8 @@
 <style rel="stylesheet/scss" lang="scss" scoped>
   .dashboard-container {
     background-color: #e3e3e3;
-    min-height: 100vh;
+    min-height: 100%;
+    flex: 1 1 auto;
     padding: 50px 60px 0px;
     .info-container {
       text-align: center;

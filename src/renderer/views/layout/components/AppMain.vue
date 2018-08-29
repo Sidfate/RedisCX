@@ -1,5 +1,5 @@
 <template>
-  <el-main style="padding: 0">
+  <el-main style="padding: 0;display: flex;flex-direction: column">
     <transition name="fade" mode="out-in">
        <router-view :key="key"></router-view>
       <!--<router-view></router-view>-->

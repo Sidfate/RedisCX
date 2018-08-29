@@ -4,7 +4,7 @@
       <el-tab-pane name="keys" :closable="false">
         <span slot="label"><i class="el-icon-location"></i> Keys</span>
         <div class="operation-container">
-          <el-alert
+          <el-alert v-if="searchTitle"
                   :title="searchTitle"
                   type="success" style="margin-bottom: 10px">
           </el-alert>

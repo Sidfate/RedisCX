@@ -21,7 +21,7 @@ function createWindow () {
     height: 600,
     useContentSize: true,
     width: 1000,
-    minWidth: 800,
+    minWidth: 840,
     minHeight: 500
   })
 

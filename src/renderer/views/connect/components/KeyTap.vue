@@ -1,37 +1,28 @@
 <template>
   <div class="tap-container" v-loading.body="loadingValue" element-loading-text="Loading...">
     <div class="info-container">
-      <div class="info-title">Main Info</div>
+      <div class="info-title">Base info</div>
       <div class="info-main">
         <div class="text item">
-          <h2 class="info-item-title">KEY</h2>
-          <div class="info-item-content">{{ item.key | getKeyLabel }}</div>
+          <h2 class="info-item-title" >KEY</h2>
+          <el-tooltip class="item" effect="dark" :content="item.key" placement="top-start">
+            <div class="info-item-content">{{ item.key | getKeyLabel }}</div>
+          </el-tooltip>
         </div>
         <div class="text item">
           <h2 class="info-item-title">TYPE</h2>
-          <div class="info-item-content">{{ item.type.toUpperCase() }}</div>
+          <div class="info-item-content">
+            <el-tag size="small" type="info">{{ item.type.toUpperCase() }}</el-tag>
+          </div>
         </div>
         <div class="text item">
           <h2 class="info-item-title">TTL</h2>
-          <div class="info-item-content">{{ item.ttl }}</div>
+          <div class="info-item-content">
+            <span>{{ item.ttl }}</span>
+            <el-button type="text" icon="el-icon-edit" @click="onUpdateTtl"></el-button>
+          </div>
         </div>
       </div>
-      <!--<div>-->
-      <!--<el-tag type="success">{{ item.type.toUpperCase() }}</el-tag>-->
-      <!--{{ item.key | getKeyLabel() }}-->
-
-      <!--<div class="ttl-container">-->
-      <!--<el-input v-model="item.ttl" size="small" @blur="onSetTtl">-->
-      <!--<template slot="prepend">TTL</template>-->
-      <!--</el-input>-->
-      <!--</div>-->
-      <!--</div>-->
-
-      <!--<el-button-group style="float: right;clear: both;margin: 10px 0;">-->
-      <!--<el-button type="primary" icon="el-icon-plus" size="small" @click="onRefreshKey(item.key)" v-if="item.type !== 'string'"></el-button>-->
-      <!--<el-button type="warning" icon="el-icon-refresh" size="small" @click="onRefreshKey(item.key)"></el-button>-->
-      <!--<el-button type="danger" icon="el-icon-delete" size="small" @click="onDeleteKey(item.key)"></el-button>-->
-      <!--</el-button-group>-->
     </div>
     <div class="value-container" v-loading.body="loadingElement" element-loading-text="Scanning...">
       <template v-if="item.type === 'string'">
@@ -41,7 +32,7 @@
       <template v-else>
         <div class="operation-container">
           <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" :disabled="!batchStatus" @click="onBatchDeleteElements">Delete</el-button>
-          <el-button type="primary" size="mini" icon="el-icon-plus" @click="elementFormVisible = true">Create a new element</el-button>
+          <el-button type="primary" size="mini" icon="el-icon-plus" @click="elementFormVisible = true">Create new element</el-button>
 
           <div class="search-container">
             <el-input
@@ -285,9 +276,6 @@
         row.originValue = row.value
         row.edit = true
       },
-      async onSetTtl() {
-        await this.handler.expire(this.item.key, this.item.ttl)
-      },
       async deleteElement(list) {
         console.log(list)
         let status = false
@@ -350,6 +338,19 @@
         this.disabledKey = false
         this.elementFormLoading = false
         this.elementForm = Object.assign({}, rawForm)
+      },
+      onUpdateTtl() {
+        this.$prompt('TTL', 'Update ttl', {
+          confirmButtonText: 'Save',
+          cancelButtonText: 'Cancel',
+          inputPattern: /[0-9]+/,
+          inputErrorMessage: 'Invalid ttl'
+        }).then(async ({ value }) => {
+          await this.handler.expire(this.item.key, parseInt(value))
+          await this.getValue(this.item.key)
+        }).catch(() => {
+
+        })
       }
     }
   }
@@ -363,11 +364,17 @@
     }
   }
   .info-container {
-    padding: 10px 10px 10px 0;
-    min-width: 120px;
-    .info-item-title {
+    padding: 0 10px 0 0;
+    flex: 1;
+    .info-title {
       font-weight: 700;
       font-size: 16px;
+      border-bottom: 1px solid #eee;
+    }
+    .info-item-title {
+      font-weight: 700;
+      padding: 5px 0 5px 5px;
+      font-size: 14px;
       color: #909399;
       background: #f5f7fa;
     }
@@ -390,8 +397,11 @@
     }
   }
   .value-container {
-    width: 80%;
+    /*width: 100%;*/
+    min-width: 500px;
     padding-left: 10px;
+    display: flex;
+    flex-direction: column;
   }
   .edit-input {
     padding-right: 55px;

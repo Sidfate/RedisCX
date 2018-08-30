@@ -25,7 +25,7 @@
       </div>
     </div>
     <div class="value-container" v-loading.body="loadingElement" element-loading-text="Scanning...">
-      <template v-if="item.type === 'string'">
+      <template v-if="!item.type || item.type === 'string'">
         <json-editor @changed="changeValue" :value="item.value"></json-editor>
         <el-button type="primary" @click="onSetKey">Save</el-button>
       </template>
@@ -80,16 +80,6 @@
               <span>{{ scope.row.value }}</span>
             </template>
           </el-table-column>
-
-          <!--<el-table-column align="center" label="Actions">-->
-            <!--<template slot-scope="scope">-->
-              <!--<el-button-group>-->
-                <!--<el-button v-if="scope.row.edit" type="success" @click="onSetKey(scope.row)" size="mini" icon="el-icon-circle-check-outline"></el-button>-->
-                <!--<el-button v-else type="primary" @click="onEnableEdit(scope.row)" size="mini" icon="el-icon-edit"></el-button>-->
-                <!--<el-button type="danger" icon="el-icon-delete" size="mini" @click="onDeleteKeyValue(scope.row)"></el-button>-->
-              <!--</el-button-group>-->
-            <!--</template>-->
-          <!--</el-table-column>-->
         </el-table>
       </template>
     </div>
@@ -202,17 +192,19 @@
         this.hasElementKey = element.hasElementKey
         this.hasElementScore = element.hasElementScore
 
-        this.item = {key, type, ttl}
         await this.getElement()
+        // this.item = {key, type, ttl}
+        this.$set(this.item, 'key', key)
+        this.$set(this.item, 'type', type)
+        this.$set(this.item, 'ttl', ttl)
         this.loadingValue = false
       },
       async getElement() {
         if(!this.loadingValue) {
           this.loadingElement = true
         }
-        console.log(this.listQuery)
+
         const value = await this.element.scan(this.listQuery.key)
-        console.log(value)
         this.$set(this.item, 'value', value)
         this.loadingElement = false
       },
@@ -234,47 +226,19 @@
       async onRefreshKey(key) {
         await this.getValue(key)
       },
-      async onSetKey(row) {
+      async onSetKey() {
         this.loadingValue = true
         const handler = this.handler
         const item = this.item
 
-        console.log(row)
-        switch (item.type) {
-          case 'hash':
-            await handler.hset(item.key, row.key, row.value)
-            break
-          case 'string':
-            await handler.set(item.key, item.value)
-            break
-          case 'set':
-            await handler.srem(item.key, row.originValue)
-            await handler.sadd(item.key, row.value)
-            break
-          case 'list':
-            await handler.lset(item.key, row.key, row.value)
-            break
-          default:
-            this.$message.warning('Can\'t save the key!')
-            return
-        }
-
-        if(row) {
-          row.edit = false
-        }
+        await handler.set(item.key, item.value.replace(/\"/g, ''))
+        // await handler.set(item.key, ""+item.value)
         this.loadingValue = false
         this.$message.success('Update the key successfully!')
       },
       changeValue(value) {
+        console.log(value)
         this.$set(this.item, 'value', value)
-      },
-      cancelEdit(row) {
-        row.value = row.originValue
-        row.edit = false
-      },
-      onEnableEdit(row) {
-        row.originValue = row.value
-        row.edit = true
       },
       async deleteElement(list) {
         console.log(list)

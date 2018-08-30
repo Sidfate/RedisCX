@@ -26,7 +26,7 @@
     </div>
     <div class="value-container" v-loading.body="loadingElement" element-loading-text="Scanning...">
       <template v-if="!item.type || item.type === 'string'">
-        <json-editor @changed="changeValue" :value="item.value"></json-editor>
+        <json-editor @changed="changeValue" :value="item.value" ></json-editor>
         <el-button type="primary" @click="onSetKey">Save</el-button>
       </template>
       <template v-else>
@@ -192,11 +192,11 @@
         this.hasElementKey = element.hasElementKey
         this.hasElementScore = element.hasElementScore
 
+        this.item = {key, type, ttl}
         await this.getElement()
-        // this.item = {key, type, ttl}
-        this.$set(this.item, 'key', key)
-        this.$set(this.item, 'type', type)
-        this.$set(this.item, 'ttl', ttl)
+        // this.$set(this.item, 'key', key)
+        // this.$set(this.item, 'type', type)
+        // this.$set(this.item, 'ttl', ttl)
         this.loadingValue = false
       },
       async getElement() {

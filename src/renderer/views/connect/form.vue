@@ -46,7 +46,9 @@
     },
     data() {
       const checkName = (rule, value, callback) => {
-        if(this.connectMap.hasOwnProperty(value)) {
+        if((!this.editable && this.connectMap.hasOwnProperty(value))
+          || (this.editable && this.connectMap.hasOwnProperty(value) && value != this.editedName)
+        ) {
           callback(new Error("Connection name must not be repeated."))
         }else {
           callback()

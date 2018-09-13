@@ -4,7 +4,7 @@
       <el-tab-pane label="Auto Search">
         <el-form :model="settingForm"
                  label-position="left"
-                 label-width="50%"
+                 label-width="180px"
                  size="small"
                  :rules="settingFormRules"
                  ref="settingForm"
@@ -13,7 +13,10 @@
             <el-switch v-model="settingForm.autoSearch"></el-switch>
           </el-form-item>
           <el-form-item label="Auto Search Limit" >
-            <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch"></el-input>
+            <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch" style="max-width: 150px"></el-input>
+          </el-form-item>
+          <el-form-item label-width="0">
+            <el-button type="primary" @click="onSaveSetting">Save</el-button>
           </el-form-item>
         </el-form>
       </el-tab-pane>
@@ -74,7 +77,7 @@
           this.$store.dispatch('CleanCache', this.cache.checked)
         })
       },
-      onSubmit() {
+      onSaveSetting() {
         const autoSearch = this.settingForm.autoSearch
         let autoSearchLimit = this.settingForm.autoSearchLimit
         if (autoSearch) {

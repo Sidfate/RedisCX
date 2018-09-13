@@ -142,12 +142,13 @@
     .version-container {
       display: flex;
       margin-left: 20px;
+      font-size: 28px;
+      height: 100%;
+      line-height: 100px;
       .version {
         margin-left: 10px;
-        height: 100%;
-        line-height: 100px;
-        font-size: 28px;
         color: #C0C4CC;
+        font-size: 20px;
       }
     }
   }

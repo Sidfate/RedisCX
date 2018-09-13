@@ -30,12 +30,25 @@
         </div>
         <el-button type="danger" @click="onRestore">Clean Cache</el-button>
       </el-tab-pane>
+      <el-tab-pane label="About">
+        <div class="base-info">
+          <div class="logo-container">
+            <img src="~@/assets/logo.png" class="logo">
+          </div>
+          <div class="version-container">
+            <div class="name">RedisCX</div>
+            <div class="version">{{version}}</div>
+          </div>
+        </div>
+        <el-button type="primary" @click="onCheckUpdate">Check for update</el-button>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
+  import { shell, remote } from 'electron'
 
   export default {
     name: "SettingModal",
@@ -44,9 +57,13 @@
         'autoSearch',
         'autoSearchLimit',
         'cacheOptions'
-      ])
+      ]),
+      version() {
+        return remote.getGlobal('version')
+      }
     },
     mounted() {
+      console.log(process.versions)
       this.settingForm.autoSearch = this.autoSearch
       this.settingForm.autoSearchLimit = this.autoSearchLimit
       this.cache.options = this.cacheOptions
@@ -94,20 +111,44 @@
         this.settingFormVisible = false
       },
       handleCheckAllChange(val) {
-        this.cache.checked = val ? this.cache.options : [];
-        this.cache.isIndeterminate = false;
+        this.cache.checked = val ? this.cache.options : []
+        this.cache.isIndeterminate = false
       },
       handleCheckedOptionsChange(value) {
-        let checkedCount = value.length;
-        this.cache.checkAll = checkedCount === this.cache.options.length;
-        this.cache.isIndeterminate = checkedCount > 0 && checkedCount < this.cache.options.length;
+        let checkedCount = value.length
+        this.cache.checkAll = checkedCount === this.cache.options.length
+        this.cache.isIndeterminate = checkedCount > 0 && checkedCount < this.cache.options.length
+      },
+      onCheckUpdate() {
+        shell.openExternal('https://github.com/Sidfate/RedisCX/releases')
       }
     }
   }
 </script>
 
-<style scoped>
+<style rel="stylesheet/scss" lang="scss" scoped>
   .check-cache {
     margin-bottom: 20px;
+  }
+  .base-info {
+    display: flex;
+    height: 100px;
+    margin-bottom: 20px;
+    .logo-container {
+      .logo{
+        width: 100px;
+      }
+    }
+    .version-container {
+      display: flex;
+      margin-left: 20px;
+      .version {
+        margin-left: 10px;
+        height: 100%;
+        line-height: 100px;
+        font-size: 28px;
+        color: #C0C4CC;
+      }
+    }
   }
 </style>

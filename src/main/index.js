@@ -15,6 +15,12 @@ const winURL = process.env.NODE_ENV === 'development'
 
 function createWindow () {
   /**
+   * global version
+   */
+  var pack = require("../../package.json")
+  global.version = pack.version
+
+  /**
    * Initial window options
    */
   mainWindow = new BrowserWindow({

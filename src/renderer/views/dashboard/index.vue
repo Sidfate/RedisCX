@@ -17,8 +17,8 @@
       </a>
 
       <div class="info-container">
-        <span class="display_name">RedisCX</span>
-        <span style="font-size:20px;padding-top:20px;display:inline-block;">Created by Sidfate</span>
+        <span class="display_name" style="color:#303133">RedisCX</span>
+        <span style="font-size:20px;padding-top:20px;display:inline-block;color:#606266">A cross-platform redis gui client created by Sidfate.</span>
       </div>
     </div>
   </div>

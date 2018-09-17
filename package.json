@@ -1,6 +1,6 @@
 {
   "name": "RedisCX",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "author": "Sidfate",
   "description": "Redis client for any platform",
   "license": "MIT",

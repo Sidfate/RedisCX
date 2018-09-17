@@ -55,7 +55,7 @@ export default {
 
 <style scoped>
 .json-editor{
-  height: 100%;
+  /*height: 100%;*/
   position: relative;
   clear: both;
   margin: 15px 0;

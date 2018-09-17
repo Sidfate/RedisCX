@@ -22,12 +22,17 @@
             <el-button type="text" icon="el-icon-edit" @click="onUpdateTtl"></el-button>
           </div>
         </div>
+        <div class="text item">
+          <div class="info-item-content">
+            <el-button icon="el-icon-refresh" type="warning" @click="onRefreshKey" size="mini" style="width: 100%">Refresh</el-button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="value-container" v-loading.body="loadingElement" element-loading-text="Scanning...">
       <template v-if="!item.type || item.type === 'string'">
         <json-editor @changed="changeValue" :value="item.value" ></json-editor>
-        <el-button type="primary" @click="onSetKey">Save</el-button>
+        <el-button type="primary" @click="onSetKey" style="width: 56px" size="small">Save</el-button>
       </template>
       <template v-else>
         <div class="operation-container">
@@ -179,11 +184,12 @@
       }
     },
     async created() {
-      await this.getValue(this.oneKey)
+      await this.getValue()
     },
     methods: {
-      async getValue(key) {
+      async getValue() {
         this.loadingValue = true
+        let key = this.oneKey
         const element = await (new Factory(this.handler, key)).build()
         this.element = element
 
@@ -223,8 +229,8 @@
         })
       },
       // 刷新key的值
-      async onRefreshKey(key) {
-        await this.getValue(key)
+      async onRefreshKey() {
+        await this.getValue()
       },
       async onSetKey() {
         this.loadingValue = true
@@ -311,7 +317,7 @@
           inputErrorMessage: 'Invalid ttl'
         }).then(async ({ value }) => {
           await this.handler.expire(this.item.key, parseInt(value))
-          await this.getValue(this.item.key)
+          await this.getValue()
         }).catch(() => {
 
         })
@@ -330,7 +336,7 @@
   .info-container {
     padding: 0 10px 0 0;
     flex: 1 1 auto;
-    min-width: 120px;
+    min-width: 150px;
     .info-title {
       font-weight: 700;
       font-size: 16px;

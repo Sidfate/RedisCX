@@ -1,7 +1,7 @@
 <template>
   <div class="menu-wrapper">
     <router-link :to="{name: 'ConnectNewForm'}" >
-      <el-menu-item index="0" key="0" class="new-connection">
+      <el-menu-item index="0" key="0" class="new-connection" style="color: #FAFAD2">
         <i class="el-icon-circle-plus-outline"></i>
         <span slot="title">New Connection</span>
       </el-menu-item>

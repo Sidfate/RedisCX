@@ -1,7 +1,9 @@
 <template>
   <div>
     <el-tabs tab-position="left" style="height: 60vh;">
-      <el-tab-pane label="Auto Search">
+      <el-tab-pane label="Auto Search" style="padding-left: 20px">
+        <h1>Auto Search</h1>
+        <span v-html="autoSearchDesc"></span>
         <el-form :model="settingForm"
                  label-position="left"
                  label-width="180px"
@@ -9,7 +11,7 @@
                  :rules="settingFormRules"
                  ref="settingForm"
         >
-          <el-form-item label="Auto Search">
+          <el-form-item label="Enabled Auto Search">
             <el-switch v-model="settingForm.autoSearch"></el-switch>
           </el-form-item>
           <el-form-item label="Auto Search Limit" >
@@ -20,7 +22,9 @@
           </el-form-item>
         </el-form>
       </el-tab-pane>
-      <el-tab-pane label="Cache">
+      <el-tab-pane label="Cache" style="padding-left: 20px">
+        <h1>Cache</h1>
+        <span v-html="cacheDesc"></span>
         <div class="check-cache">
           <el-checkbox :indeterminate="cache.isIndeterminate" v-model="cache.checkAll" @change="handleCheckAllChange">All</el-checkbox>
           <div style="margin: 15px 0;"></div>
@@ -30,7 +34,8 @@
         </div>
         <el-button type="danger" @click="onRestore">Clean Cache</el-button>
       </el-tab-pane>
-      <el-tab-pane label="About">
+      <el-tab-pane label="About" style="padding-left: 20px">
+        <h1>About</h1>
         <div class="base-info">
           <div class="logo-container">
             <img src="~@/assets/logo.png" class="logo">
@@ -40,7 +45,13 @@
             <div class="version">{{version}}</div>
           </div>
         </div>
-        <el-button type="primary" @click="onCheckUpdate">Check for update</el-button>
+        <div class="community-container">
+          <ul>
+            <li><el-button type="text" @click="onOpenExternal('https://github.com/Sidfate/RedisCX')">Github</el-button></li>
+            <li><el-button type="text" @click="onOpenExternal('https://gitter.im/RedisCX/Lobby#')">Gitter</el-button></li>
+          </ul>
+        </div>
+        <el-button type="primary" @click="onOpenExternal('https://github.com/Sidfate/RedisCX/releases')">Check for update</el-button>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -49,8 +60,11 @@
 <script>
   import { mapGetters } from 'vuex'
   import { shell, remote } from 'electron'
+  import MarkdownIt from 'markdown-it'
+  import ElButton from "element-ui/packages/button/src/button";
 
   export default {
+    components: {ElButton},
     name: "SettingModal",
     computed: {
       ...mapGetters([
@@ -60,6 +74,18 @@
       ]),
       version() {
         return remote.getGlobal('version')
+      },
+      autoSearchDesc() {
+        return new MarkdownIt().render("Auto Search is a function let you control how to show the keys when you step into a db." +
+          "When you open a db with large keys(such as million), it const too long to show all the keys, but may be you just want search one key." +
+          "So, you can open [Auto search], set the number and when one db\'s keys are lager then the number is wont show all keys.\n\n")
+      },
+      cacheDesc() {
+        return new MarkdownIt().render("Here are some cache in RedisCX:\n" +
+          "- create a new connection\n" +
+          "- search keyword in db and keys\n" +
+          "- other setting options\n" +
+          "you can reset these cache\n\n")
       }
     },
     mounted() {
@@ -119,8 +145,8 @@
         this.cache.checkAll = checkedCount === this.cache.options.length
         this.cache.isIndeterminate = checkedCount > 0 && checkedCount < this.cache.options.length
       },
-      onCheckUpdate() {
-        shell.openExternal('https://github.com/Sidfate/RedisCX/releases')
+      onOpenExternal(url) {
+        shell.openExternal(url)
       }
     }
   }
@@ -151,5 +177,7 @@
         font-size: 20px;
       }
     }
+  }
+  .community-container {
   }
 </style>

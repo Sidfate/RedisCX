@@ -5,6 +5,7 @@ const CONNECT_MAP = 'connectMap'
 const SEARCH_HISTORY = 'searchHistory'
 const AUTO_SEARCH = 'autoSearch'
 const AUTO_SEARCH_LIMIT = 'autoSearchLimit'
+const DB_ASSIGN = 'dbAssign'
 
 //cleanSearchHistory()
 export function getConnectMap() {
@@ -21,8 +22,8 @@ export function cleanConnect() {
 }
 
 export function getSearchHistory(domain) {
-  const map = store.get(SEARCH_HISTORY+'.'+domain)
-  return map ? map : []
+  const list = store.get(SEARCH_HISTORY+'.'+domain)
+  return list ? list : []
 }
 
 export function addSearchHistory(domain, list) {
@@ -47,4 +48,22 @@ export function getAutoSearchLimit() {
 
 export function setAutoSearchLimit(limit) {
   return store.set(AUTO_SEARCH_LIMIT, limit)
+}
+
+// export function getMlDb(connection) {
+//   const map = store.get(ML_DB+'.'+connection);
+//   return map ? map : {}
+// }
+//
+// export function setMlDb(connection, map) {
+//   return store.set(ML_DB+'.'+connection, map)
+// }
+
+export function getDbAssign(connection) {
+  const list = store.get(DB_ASSIGN+'.'+connection);
+  return list ? list : []
+}
+
+export function setDbAssign(connection, list) {
+  return store.set(DB_ASSIGN+'.'+connection, list)
 }

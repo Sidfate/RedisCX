@@ -2,7 +2,7 @@
 @import './mixin.scss';
 @import './transition.scss';
 @import './element-ui.scss';
-@import './sidebar.scss';
+//@import './sidebar.scss';
 
 body {
   height: 100%;
@@ -75,4 +75,12 @@ a:hover {
 
 .app-container {
   padding: 20px;
+}
+
+.operation-container {
+  margin-bottom: 20px;
+}
+
+.search-container {
+  float: right;
 }

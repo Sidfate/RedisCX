@@ -1,21 +1,20 @@
 <template>
   <div class="app-container" v-loading.body="loadingDbs" element-loading-text="connecting...">
+    <div class="operation-container">
+      <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" @click="onBatchFlushDbs" :disabled="!batchStatus">Flush</el-button>
 
-    <div class="filter-container" style="margin-bottom: 5px;">
-      <el-autocomplete
-              class="inline-input"
-              v-model="listQuery.number"
-              :fetch-suggestions="querySearch"
-              placeholder="search for db"
-              @keyup.enter.native="onFilter"
-              size="small"
-              style="width: 200px;"
-      >
-        <el-button slot="append" icon="el-icon-search" @click="onFilter"></el-button>
-      </el-autocomplete>
-      <el-button-group style="float: right">
-        <el-button class="filter-item" type="warning" size="small" icon="el-icon-refresh" @click="getDbs"></el-button>
-      </el-button-group>
+      <div class="search-container">
+        <el-autocomplete
+                class="inline-input"
+                v-model="listQuery.number"
+                :fetch-suggestions="querySearch"
+                placeholder="search for db"
+                @keyup.enter.native="onFilter"
+                size="mini"
+        >
+          <el-button slot="append" icon="el-icon-search" @click="onFilter"></el-button>
+        </el-autocomplete>
+      </div>
     </div>
 
     <el-table
@@ -24,7 +23,15 @@
             size="mini"
             :default-sort="{prop: 'db'}"
             fit highlight-current-row
+            @selection-change="handleSelectionChange"
+            @row-contextmenu="onOpenMenu"
+            @row-dblclick="onSelectDbByDblClick"
+            :header-cell-style="{background: '#f5f7fa'}"
     >
+      <el-table-column
+              type="selection"
+              width="55">
+      </el-table-column>
       <el-table-column
               prop="db"
               label="DB"
@@ -36,25 +43,6 @@
               label="Size"
               sortable>
       </el-table-column>
-      <el-table-column
-              label="Operation"
-              width="120">
-        <template slot-scope="scope">
-          <router-link :to="{name: 'Keys', params: { db: scope.row.db }}">
-            <el-button
-                    type="text"
-                    size="small">
-              Select
-            </el-button>
-          </router-link>
-          <el-button
-                  @click="onFlush(scope.row.db)"
-                  type="text"
-                  size="small" style="color: #F56C6C;">
-            Flush
-          </el-button>
-        </template>
-      </el-table-column>
     </el-table>
   </div>
 </template>
@@ -63,6 +51,8 @@
   import {mapGetters} from 'vuex'
   import { getSearchHistory, addSearchHistory } from '@/utils/localStore'
   import Redis from 'ioredis'
+  import {remote} from 'electron'
+  import _ from 'lodash'
 
   export default {
     name: "DB",
@@ -72,11 +62,24 @@
       ]),
       selectedName() {
         return this.$route.params['name']
+      },
+      menu() {
+        const {Menu, MenuItem} = remote
+
+        const menu = new Menu()
+        menu.append(new MenuItem({label: 'Select', click: this.onSelectDbByMenu}))
+        menu.append(new MenuItem({type: 'separator'}))
+        menu.append(new MenuItem({label: 'Flush', click: this.onFlushDbByMenu}))
+
+        return menu
       }
     },
     watch: {
       // 如果路由有变化，会再次执行该方法
-      '$route': 'getDbs'
+      '$route': 'getDbs',
+      multipleSelection(val) {
+          this.batchStatus = (val.length > 0)
+      }
     },
     data() {
       return {
@@ -86,7 +89,10 @@
           number: null
         },
         loadingDbs: false,
-        handler: null
+        handler: null,
+        multipleSelection: [],
+        selectedDb: null,
+        batchStatus: false
       }
     },
     async created() {
@@ -95,7 +101,6 @@
     },
     mounted() {
       this.searchHistory = getSearchHistory('db')
-      console.log(this.searchHistory)
     },
     methods: {
       async getDbs() {
@@ -127,69 +132,124 @@
         this.loadingDbs = false
       },
       async connect() {
+        this.loadingDbs = true
         const name = this.$route.params['name']
         const thisConnect = this.connectMap[name]
-        thisConnect['showFriendlyErrorStack'] = true
-        // thisConnect['retry_strategy'] =  function (options) {
-        //   console.log(options)
-        //   if (options.error.code === 'ECONNREFUSED') {
-        //     // End reconnecting on a specific error and flush all commands with a individual error
-        //     console.log('连接被拒绝');
-        //   }
-        //   if (options.times_connected > 10) {
-        //     console.log('重试连接超过十次');
-        //   }
-        //   // reconnect after
-        //   return Math.max(options.attempt * 100, 3000);
-        // }
-        console.log(thisConnect)
-
+        thisConnect['lazyConnect'] = true
         const handler = await Redis(thisConnect)
-        this.handler = handler
-        this.$store.dispatch('SetHandler', { handler, name })
+        await handler.connect().then(() => {
+          this.handler = handler
+          this.$store.dispatch('SetHandler', { handler, name })
+        }).catch((e) => {
+          this.$message.error(e.message)
+          handler.disconnect()
+          this.$store.dispatch('CloseHandler')
+          this.$router.push({path: '/'})
+        })
       },
       async onFilter() {
         await this.getDbs()
-        const number = this.listQuery.number
-        if(number && number !== '') {
+        const number = parseInt(this.listQuery.number)
+        if(!isNaN(number)) {
           let searchHistory = this.searchHistory
 
           if(searchHistory.length >= 5) {
             searchHistory = searchHistory.slice(0, 5)
           }
-          if(!searchHistory.some(v => (v.value === number))) {
-            searchHistory.unshift({value: number})
-            addSearchHistory('db', searchHistory)
-          }
+          searchHistory = searchHistory.filter(v => (v.value != number))
+          searchHistory.unshift({value: number.toString()})
+          addSearchHistory('db', searchHistory)
 
           this.searchHistory = searchHistory
         }
       },
-      async onFlush(db) {
-        this.$confirm('Are you sure to flush this db?', 'Warning', {
-          confirmButtonText: 'Yes',
-          cancelButtonText: 'Cancel',
-          type: 'warning'
-        }).then(async () => {
-          const handler = this.handler
-          await handler.select(db)
-          await handler.flushdb()
-          this.$message.success('Flush db successfully!')
-          this.$set(this.dbList, db, {db, size: 0})
+      async flushDb(dbs) {
+        if(!_.isArray(dbs) || _.isEmpty(dbs)) {
+          return false
+        }
+
+        let status = false
+        const handler = this.handler
+        let pipeline = handler.pipeline()
+        console.log(dbs)
+        dbs.forEach((db) => {
+          pipeline.select(db)
+          pipeline.flushdb()
         })
+        await pipeline.exec().then((results) => {
+          let error = _.find(results, (o)=> (o[0] instanceof Redis.ReplyError))
+
+          if(error) {
+            this.$message.error(error[0].message)
+          }else {
+            dbs.forEach((db)=> {
+              this.$set(this.dbList, db, {db, size: 0})
+            })
+            status = true
+          }
+        })
+
+        return status
       },
       querySearch(queryString, cb) {
         const searchHistory = this.searchHistory
         let results = queryString ? searchHistory.filter((search) => {
           return (search.value.indexOf(queryString.toLowerCase()) === 0)
-        }) : searchHistory;
-        // 调用 callback 返回建议列表的数据
-        cb(results);
+        }) : searchHistory
+        cb(results)
       },
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+      onOpenMenu(row) {
+        this.selectedDb = row.db
+        this.menu.popup(remote.getCurrentWindow())
+      },
+      onSelectDbByMenu(row) {
+        this.selectDb(this.selectedDb)
+      },
+      onSelectDbByDblClick(row) {
+        this.selectDb(row.db)
+      },
+      selectDb(db) {
+        this.$router.push({
+          name: 'Keys', params: { db }
+        })
+      },
+      async onFlushDbByMenu() {
+        if(_.isNull(this.selectedDb)) {
+          return
+        }
+        this.$confirm('Are you sure to flush this db?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.flushDb([this.selectedDb])) {
+            this.$message.success('Flush the db successfully!')
+          }
+        }).finally(() => {
+          this.selectedDb = null
+        })
+      },
+      async onBatchFlushDbs() {
+        if(_.isEmpty(this.multipleSelection)) {
+          return
+        }
+
+        this.$confirm('Are you sure to flush these dbs?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.flushDb(this.multipleSelection.map((item) => item.db))) {
+            this.$message.success('Flush dbs successfully!')
+          }
+        })
+      }
     }
   }
 </script>
 
 <style scoped>
-
 </style>

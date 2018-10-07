@@ -1,61 +1,116 @@
 <template>
-  <div class="value-container" v-loading.body="loadingValue" element-loading-text="Loading...">
-    <div class="value-header">
-      <div>
-        <el-tag type="success">{{ item.type.toUpperCase() }}</el-tag>
-        {{ item.key | getKeyLabel() }}
-
-        <div class="ttl-container">
-          <el-input v-model="item.ttl" size="small">
-            <template slot="prepend">TTL</template>
-          </el-input>
+  <div class="tap-container" v-loading.body="loadingValue" element-loading-text="Loading...">
+    <div class="info-container">
+      <div class="info-title">Base info</div>
+      <div class="info-main">
+        <div class="text item">
+          <h2 class="info-item-title" >KEY</h2>
+          <el-tooltip class="item" effect="dark" :content="item.key" placement="top-start">
+            <div class="info-item-content">{{ item.key | getKeyLabel }}</div>
+          </el-tooltip>
+        </div>
+        <div class="text item">
+          <h2 class="info-item-title">TYPE</h2>
+          <div class="info-item-content">
+            <el-tag size="small" type="info">{{ item.type.toUpperCase() }}</el-tag>
+          </div>
+        </div>
+        <div class="text item">
+          <h2 class="info-item-title">TTL</h2>
+          <div class="info-item-content">
+            <span>{{ item.ttl }}</span>
+            <el-button type="text" icon="el-icon-edit" @click="onUpdateTtl"></el-button>
+          </div>
+        </div>
+        <div class="text item">
+          <div class="info-item-content">
+            <el-button icon="el-icon-refresh" type="warning" @click="onRefreshKey" size="mini" style="width: 100%">Refresh</el-button>
+          </div>
         </div>
       </div>
-
-      <el-button-group style="float: right;clear: both;margin-top: 10px;">
-        <el-button type="primary" icon="el-icon-plus" size="small" @click="onRefreshKey(item.key)" v-if="item.type !== 'string'"></el-button>
-        <el-button type="warning" icon="el-icon-refresh" size="small" @click="onRefreshKey(item.key)"></el-button>
-        <!--<el-button type="danger" icon="el-icon-delete" size="small" @click="onDeleteKey(item.key)"></el-button>-->
-      </el-button-group>
     </div>
-    <template v-if="item.type === 'string'">
-      <json-editor @changed="changeValue" :value="item.value"></json-editor>
-      <el-button type="primary" @click="onSetKey">Save</el-button>
-    </template>
-    <template v-else>
-      <el-table :data="item.value" fit highlight-current-row style="margin: 20px 0;" >
-        <el-table-column label="row" width="50">
-          <template slot-scope="scope">
-            {{ scope.$index+1 }}
-          </template>
-        </el-table-column>
-        <template v-if="hasTableKey">
-          <el-table-column label="key" width="100">
+    <div class="value-container" v-loading.body="loadingElement" element-loading-text="Scanning...">
+      <template v-if="!item.type || item.type === 'string'">
+        <json-editor @changed="changeValue" :value="item.value" ></json-editor>
+        <el-button type="primary" @click="onSetKey" style="width: 56px" size="small">Save</el-button>
+      </template>
+      <template v-else>
+        <div class="operation-container">
+          <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" :disabled="!batchStatus" @click="onBatchDeleteElements">Delete</el-button>
+          <el-button type="primary" size="mini" icon="el-icon-plus" @click="elementFormVisible = true">Create new element</el-button>
+
+          <div class="search-container">
+            <el-input
+                    placeholder="Search"
+                    v-model="listQuery.key"
+                    size="mini"
+            >
+              <el-button slot="append" icon="el-icon-search" @click="getElement"></el-button>
+            </el-input>
+          </div>
+        </div>
+        <el-table
+                :data="item.value"
+                fit highlight-current-row
+                size="small"
+                @selection-change="handleSelectionChange"
+                :header-cell-style="{background: '#f5f7fa'}"
+                @row-contextmenu="onOpenMenu"
+        >
+          <el-table-column
+                  type="selection"
+                  width="55">
+          </el-table-column>
+          <el-table-column label="row" width="50">
             <template slot-scope="scope">
-              {{ scope.row.key }}
+              {{ scope.$index+1 }}
             </template>
           </el-table-column>
-        </template>
-        <el-table-column label="value">
-          <template slot-scope="scope">
-            <template v-if="scope.row.edit">
-              <el-input class="edit-input" size="small" v-model="scope.row.value"></el-input>
-              <el-button class="cancel-btn" size="mini" icon="el-icon-refresh" type="warning" @click="cancelEdit(scope.row)"></el-button>
+          <template v-if="hasElementKey">
+            <el-table-column label="key" width="100">
+              <template slot-scope="scope">
+                {{ scope.row.key }}
+              </template>
+            </el-table-column>
+          </template>
+          <template v-if="hasElementScore">
+            <el-table-column label="score" width="100">
+              <template slot-scope="scope">
+                {{ scope.row.score }}
+              </template>
+            </el-table-column>
+          </template>
+          <el-table-column label="value">
+            <template slot-scope="scope">
+              <span>{{ scope.row.value }}</span>
             </template>
-            <span v-else>{{ scope.row.value }}</span>
-          </template>
-        </el-table-column>
+          </el-table-column>
+        </el-table>
+      </template>
+    </div>
 
-        <el-table-column align="center" label="Actions" width="100">
-          <template slot-scope="scope">
-            <el-button v-if="scope.row.edit" type="success" @click="onSetKey(scope.row)" size="mini" icon="el-icon-circle-check-outline"></el-button>
-            <el-button v-else type="primary" @click="onEnableEdit(scope.row)" size="mini" icon="el-icon-edit"></el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </template>
-
-
+    <el-dialog title="Save Element" :visible.sync="elementFormVisible" :modal-append-to-body="false" width="50%" top="50px" @closed="onClosedForm">
+      <el-form :model="elementForm" label-position="top" label-width="80px" size="small" ref="elementForm">
+        <el-form-item label="Key" prop="key" v-if="hasElementKey">
+          <el-input v-model="elementForm.key" auto-complete="off" placeholder="Please input the key." :disabled="disabledKey"></el-input>
+        </el-form-item>
+        <el-form-item label="Value" prop="value">
+          <el-input
+                  type="textarea"
+                  placeholder="Please input the value."
+                  v-model="elementForm.value" clearable :rows="3">
+          </el-input>
+        </el-form-item>
+        <el-form-item label="Score" prop="score" v-if="hasElementScore">
+          <el-input v-model="elementForm.score" auto-complete="off" placeholder="Please input the score."></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="elementFormVisible = false" size="small">Cancel</el-button>
+        <el-button type="primary" size="small" :loading="true" v-if="elementFormLoading">Save</el-button>
+        <el-button type="primary" size="small" @click="onSaveElement" v-else>Save</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -63,13 +118,29 @@
   import { mapGetters } from 'vuex'
   import { formatString } from "@/utils"
   import JsonEditor from '@/components/JsonEditor'
+  import {remote} from 'electron'
+  import Factory from '@/api'
+
+  const rawForm = {
+    key: '',
+    value: '',
+    score: 0
+  }
 
   export default {
     name: "KeyTap",
     computed: {
       ...mapGetters([
         'handler'
-      ])
+      ]),
+      menu() {
+        const {Menu, MenuItem} = remote
+
+        const menu = new Menu()
+        menu.append(new MenuItem({label: 'Edit', click: this.onShowValueByMenu}))
+        menu.append(new MenuItem({label: 'Delete', click: this.onDeleteElementByMenu}))
+        return menu
+      }
     },
     components: {
       JsonEditor
@@ -77,6 +148,11 @@
     props: [
       'oneKey'
     ],
+    watch: {
+      multipleSelection(val) {
+        this.batchStatus = (val.length > 0)
+      }
+    },
     filters: {
       getKeyLabel(key) {
         return formatString(key, 20)
@@ -84,149 +160,227 @@
     },
     data() {
       return {
-        hasTableKey: true,
+        elementFormVisible: false,
+        hasElementKey: false,
+        hasElementScore: false,
         loadingValue: false,
+        loadingElement: false,
+        elementFormLoading: false,
+        disabledKey: false,
         item: {
           key: '',
           ttl: -1,
           value: null,
           type: ''
-        }
+        },
+        selectedElement: null,
+        multipleSelection: [],
+        batchStatus: false,
+        listQuery: {
+          key: ''
+        },
+        element: null,
+        elementForm: Object.assign({}, rawForm)
       }
     },
     async created() {
-      await this.getValue(this.oneKey)
+      await this.getValue()
     },
     methods: {
-      async getValue(key) {
+      async getValue() {
         this.loadingValue = true
-        const handler = this.handler
+        let key = this.oneKey
+        const element = await (new Factory(this.handler, key)).build()
+        this.element = element
 
-        const type = await handler.type(key)
-        let value = null
-        const ttl = await handler.ttl(key)
-        switch (type) {
-          case 'hash':
-            value = []
-            const hKeys = await handler.hkeys(key)
-            for (let hKey of hKeys) {
-              value.push({key: hKey, value: await handler.hget(key, hKey), edit: false})
-            }
-            break
-          case 'string':
-            let keyValue = await handler.get(key)
-            try {
-              value = JSON.parse(keyValue)
-            }catch (e) {
-              value = keyValue
-            }
-            break
-          case 'set':
-            value = []
-            const setList = await handler.smembers(key)
-            setList.map(v => {
-              value.push({key: null, value: v, edit: false})
-            })
-            this.hasTableKey = false
-            break
-          case 'list':
-            value = []
-            const listLength = await handler.llen(key)
-            const list = await handler.lrange(key, 0, listLength)
-            list.map((v, i) => {
-              value.push({key: i, value: v, edit: false})
-            })
-            break
-          default:
-            this.$message.warning('Can\'t open the key!')
-            return
+        const type = await element.getType(key)
+        const ttl = await element.getTtl(key)
+        this.hasElementKey = element.hasElementKey
+        this.hasElementScore = element.hasElementScore
+
+        this.item = {key, type, ttl}
+        await this.getElement()
+        // this.$set(this.item, 'key', key)
+        // this.$set(this.item, 'type', type)
+        // this.$set(this.item, 'ttl', ttl)
+        this.loadingValue = false
+      },
+      async getElement() {
+        if(!this.loadingValue) {
+          this.loadingElement = true
         }
 
-        this.item = {key, value, type, ttl}
-        console.log(this.item)
-        this.loadingValue = false
+        const value = await this.element.scan(this.listQuery.key)
+        this.$set(this.item, 'value', value)
+        this.loadingElement = false
       },
       // 删除key
       async onDeleteKey(key) {
-        const handler = this.handler
-        await handler.del(key)
+        this.$confirm('Are you sure to delete this key?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          const handler = this.handler
+          await handler.del(key)
 
-        const index = this.keys.indexOf(key)
-        this.total -= 1
-        // this.$set(this.selectedHandler, 'dbSize', this.selectedHandler.dbSize-1)
-        if (index > -1) {
-          this.keys.splice(index, 1)
-        }
-
-        this.handleTabsEdit(key, 'remove')
-        this.$message.success('Delete the key successfully!')
+          this.$emit('handleTabsEdit', key, 'remove')
+          this.$message.success('Delete the key successfully!')
+        })
       },
       // 刷新key的值
-      async onRefreshKey(key) {
-        await this.getValue(key)
+      async onRefreshKey() {
+        await this.getValue()
       },
-      async onSetKey(row) {
+      async onSetKey() {
         this.loadingValue = true
         const handler = this.handler
         const item = this.item
 
-        console.log(row)
-        switch (item.type) {
-          case 'hash':
-            await handler.hset(item.key, row.key, row.value)
-            break
-          case 'string':
-            await handler.set(item.key, item.value)
-            break
-          case 'set':
-            await handler.srem(item.key, row.originValue)
-            await handler.sadd(item.key, row.value)
-            break
-          case 'list':
-            await handler.lset(item.key, row.key, row.value)
-            break
-          default:
-            this.$message.warning('Can\'t save the key!')
-            return
-        }
-
-        if(row) {
-          row.edit = false
-        }
+        await handler.set(item.key, item.value.replace(/\"/g, ''))
+        // await handler.set(item.key, ""+item.value)
         this.loadingValue = false
         this.$message.success('Update the key successfully!')
       },
       changeValue(value) {
+        console.log(value)
         this.$set(this.item, 'value', value)
       },
-      cancelEdit(row) {
-        row.value = row.originValue
-        row.edit = false
-      },
-      confirmEdit(row) {
+      async deleteElement(list) {
+        console.log(list)
+        let status = false
+        await this.element.batchDelete(list).then((res) => {
+          status = true
+        }).catch((e) => {
+          this.$message.error(e)
+        })
 
+        return status
       },
-      onEnableEdit(row) {
-        row.originValue = row.value
-        row.edit = true
+      onOpenMenu(row) {
+        this.selectedElement = row
+        this.menu.popup(remote.getCurrentWindow())
+      },
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+      onDeleteElementByMenu() {
+        this.$confirm('Are you sure to delete the element?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.deleteElement([this.selectedElement])) {
+            this.$message.success('Deleted the element successfully!')
+            await this.getElement()
+          }
+        })
+      },
+      onBatchDeleteElements() {
+        this.$confirm('Are you sure to delete these elements?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.deleteElement(this.multipleSelection)) {
+            this.$message.success('Deleted these elements successfully!')
+            await this.getElement()
+          }
+        })
+      },
+      async onSaveElement() {
+        this.elementFormLoading = true
+        await this.element.save(this.elementForm)
+
+        this.elementFormVisible = false
+        this.$message.success('Save the element successfully!')
+        await this.getElement()
+      },
+      onShowValueByMenu() {
+        this.disabledKey = true
+        this.elementForm = Object.assign({}, this.selectedElement)
+        if(!this.hasElementKey) {
+          this.elementForm.rawValue = this.selectedElement.value
+        }
+        this.elementFormVisible = true
+      },
+      onClosedForm() {
+        this.disabledKey = false
+        this.elementFormLoading = false
+        this.elementForm = Object.assign({}, rawForm)
+      },
+      onUpdateTtl() {
+        this.$prompt('TTL', 'Update ttl', {
+          confirmButtonText: 'Save',
+          cancelButtonText: 'Cancel',
+          inputPattern: /[0-9]+/,
+          inputErrorMessage: 'Invalid ttl'
+        }).then(async ({ value }) => {
+          await this.handler.expire(this.item.key, parseInt(value))
+          await this.getValue()
+        }).catch(() => {
+
+        })
       }
     }
   }
 </script>
 
-<style scoped>
- .ttl-container {
-   width: 30%;
-   max-width: 120px;
-   margin-top: 5px;
-   float: right;
- }
- .edit-input {
-   padding-right: 55px;
- }
- .cancel-btn {
-   position: absolute;
-   right: 15px;
-   top: 12px;
- }
+<style rel="stylesheet/scss" lang="scss" scoped>
+  .tap-container {
+    display: flex;
+    .text.item {
+      margin: 5px 0;
+    }
+  }
+  .info-container {
+    padding: 0 10px 0 0;
+    flex: 1 1 auto;
+    min-width: 150px;
+    .info-title {
+      font-weight: 700;
+      font-size: 16px;
+      border-bottom: 1px solid #eee;
+    }
+    .info-item-title {
+      font-weight: 700;
+      padding: 5px 0 5px 5px;
+      font-size: 14px;
+      color: #909399;
+      background: #f5f7fa;
+    }
+    .info-item-content {
+      font-size: 14px;
+      line-height: 21px;
+      color: #606266;
+      text-align: justify;
+    }
+    &::after {
+      content: "";
+      position: relative;
+      right: 0;
+      left: auto;
+      bottom: 0;
+      width: 2px;
+      height: 100%;
+      background-color: #e4e7ed;
+      z-index: 1;
+    }
+  }
+  .value-container {
+    /*width: 100%;*/
+    min-width: 500px;
+    flex: 2 1 auto;
+    padding-left: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  .edit-input {
+    padding-right: 55px;
+  }
+  .cancel-btn {
+    position: absolute;
+    right: 15px;
+    top: 12px;
+  }
 </style>

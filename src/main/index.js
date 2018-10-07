@@ -15,12 +15,20 @@ const winURL = process.env.NODE_ENV === 'development'
 
 function createWindow () {
   /**
+   * global version
+   */
+  var pack = require("../../package.json")
+  global.version = pack.version
+
+  /**
    * Initial window options
    */
   mainWindow = new BrowserWindow({
-    height: 563,
+    height: 600,
     useContentSize: true,
-    width: 1000
+    width: 1000,
+    minWidth: 860,
+    minHeight: 500
   })
 
   mainWindow.loadURL(winURL)
@@ -31,26 +39,34 @@ function createWindow () {
 
   //console.log(Menu.getApplicationMenu())
   // Create the Application's main menu
-  // const template = [{
-  //   label: "Application",
-  //   submenu: [
-  //     { label: "About Application", selector: "orderFrontStandardAboutPanel:" },
-  //     { type: "separator" },
-  //     { label: "Quit", accelerator: "Command+Q", click: function() { app.quit(); }}
-  //   ]}, {
-  //   label: "Edit",
-  //   submenu: [
-  //     { label: "Undo", accelerator: "CmdOrCtrl+Z", selector: "undo:" },
-  //     { label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", selector: "redo:" },
-  //     { type: "separator" },
-  //     { label: "Cut", accelerator: "CmdOrCtrl+X", selector: "cut:" },
-  //     { label: "Copy", accelerator: "CmdOrCtrl+C", selector: "copy:" },
-  //     { label: "Paste", accelerator: "CmdOrCtrl+V", selector: "paste:" },
-  //     { label: "Select All", accelerator: "CmdOrCtrl+A", selector: "selectAll:" }
-  //   ]}
-  // ];
-  //
-  // Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  if(process.env.NODE_ENV !== 'development') {
+    const template = [{
+      label: "Application",
+      submenu: [
+        {label: "About Application", selector: "orderFrontStandardAboutPanel:"},
+        {type: "separator"},
+        {
+          label: "Quit", accelerator: "Command+Q", click: function () {
+            app.quit();
+          }
+        }
+      ]
+    }, {
+      label: "Edit",
+      submenu: [
+        {label: "Undo", accelerator: "CmdOrCtrl+Z", selector: "undo:"},
+        {label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", selector: "redo:"},
+        {type: "separator"},
+        {label: "Cut", accelerator: "CmdOrCtrl+X", selector: "cut:"},
+        {label: "Copy", accelerator: "CmdOrCtrl+C", selector: "copy:"},
+        {label: "Paste", accelerator: "CmdOrCtrl+V", selector: "paste:"},
+        {label: "Select All", accelerator: "CmdOrCtrl+A", selector: "selectAll:"}
+      ]
+    }
+    ];
+
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  }
 }
 
 app.on('ready', createWindow)

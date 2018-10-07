@@ -1,17 +1,18 @@
 <template>
-  <el-scrollbar wrapClass="scrollbar-wrapper">
-    <el-menu
-      mode="vertical"
-      :show-timeout="200"
-      :default-active="selectedName"
-      :collapse="isCollapse"
-      background-color="#304156"
-      text-color="#bfcbd9"
-      active-text-color="#409EFF"
-    >
-      <sidebar-item></sidebar-item>
-    </el-menu>
-  </el-scrollbar>
+  <el-aside width="180px">
+      <el-menu
+        mode="vertical"
+        :default-active="selectedName"
+        :collapse="isCollapse"
+        background-color="#304156"
+        text-color="#bfcbd9"
+        active-text-color="#409EFF"
+        collapse-transition
+        style="height: 100%;"
+      >
+        <sidebar-item></sidebar-item>
+      </el-menu>
+  </el-aside>
 </template>
 
 <script>

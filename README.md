@@ -1,8 +1,32 @@
-# redis-cx
+# RedisCX
 
-> redis client for any platform
+![logo](https://i.loli.net/2018/07/10/5b447752b3020.png)
 
-#### Build Setup
+> Redis client for any platform.
+
+### Feature
+
+**What's important!**
+
+* Support multiple connections.
+* Optimize searching for keys in Big-Data dbs.
+* Support reserving search history.
+* More lighter UI and simpler operation.
+* ...
+
+### Downloads
+
+[Download Link](https://github.com/Sidfate/redisCX/releases)
+
+### Snapshots
+
+![1](https://i.loli.net/2018/08/29/5b864a207a78b.png)
+
+![2](https://i.loli.net/2018/08/29/5b864a207c70d.png)
+
+![3](https://i.loli.net/2018/08/29/5b864a207e6ed.png)
+
+### Development
 
 ``` bash
 # install dependencies
@@ -14,9 +38,10 @@ npm run dev
 # build electron application for production
 npm run build
 
-
 ```
 
 ---
 
-This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue) using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).
+### License
+
+MIT

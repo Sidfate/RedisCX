@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-
     <el-form ref="connectForm" :model="connectForm" label-width="60px" style="margin: 20px;" :rules="rules">
       <el-form-item label="Name" prop="connectionName" >
         <el-input v-model="connectForm.connectionName" auto-complete="off"></el-input>
@@ -16,6 +15,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSaveConnect">Save</el-button>
+        <el-button @click="onTestConnect">Test Connection</el-button>
         <el-button @click="onReset">Reset</el-button>
       </el-form-item>
     </el-form>
@@ -24,6 +24,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import Redis from 'ioredis'
 
   export default {
     props: [
@@ -45,7 +46,9 @@
     },
     data() {
       const checkName = (rule, value, callback) => {
-        if(this.connectMap.hasOwnProperty(value)) {
+        if((!this.editable && this.connectMap.hasOwnProperty(value))
+          || (this.editable && this.connectMap.hasOwnProperty(value) && value != this.editedName)
+        ) {
           callback(new Error("Connection name must not be repeated."))
         }else {
           callback()
@@ -82,15 +85,32 @@
       }
     },
     methods: {
-      // 添加连接
       onSaveConnect() {
-        if(this.editable) {
-          this.$store.dispatch('EditConnect', { name: this.editedName, connection: this.connectForm })
-          this.$message.success('Updated the connection successfully!')
-        } else {
-          this.$store.dispatch('AddConnect', this.connectForm)
-          this.$message.success('Created the connection successfully!')
-        }
+        this.$refs['connectForm'].validate((valid) => {
+          if (valid) {
+            if(this.editable) {
+              this.$store.dispatch('EditConnect', { name: this.editedName, connection: this.connectForm })
+              this.$message.success('Updated the connection successfully!')
+            } else {
+              this.$store.dispatch('AddConnect', Object.assign({}, this.connectForm))
+              this.$message.success('Created the connection successfully!')
+            }
+          } else {
+            return false
+          }
+        })
+      },
+      async onTestConnect() {
+        this.connectForm['lazyConnect'] = true
+        const handler = await Redis(this.connectForm)
+        await handler.connect().then(() => {
+          this.$message.success('Connection successfully!')
+        }).catch((e) => {
+          // test connection failed
+          this.$message.error(e.message)
+        }).finally(() => {
+          handler.disconnect()
+        })
       },
       onReset() {
         this.$refs['connectForm'].resetFields()

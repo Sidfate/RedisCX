@@ -4,7 +4,8 @@ const connect = {
   state: {
     connectMap: getConnectMap(),
     handler: null,
-    selectedName: null
+    selectedName: null,
+    cacheOptions: ['Search history', 'Connections']
   },
   mutations: {
     SET_CONNECT_MAP: (state) => {
@@ -47,7 +48,7 @@ const connect = {
     EditConnect: ({ commit }, { name, connection }) => {
       commit('EDIT_CONNECTION', {name, connection})
     },
-    DelectConnect: ({ commit }, name) => {
+    DeleteConnect: ({ commit }, name) => {
       commit('DELETE_CONNECTION', name)
     },
     SetHandler: ({ commit }, { handler, name }) => {
@@ -55,11 +56,16 @@ const connect = {
       commit('SET_HANDLER', handler)
       commit('SET_SELECTED', name)
     },
-    CleanAllSetting: ({ commit }) => {
+    CleanCache: ({ commit }, cache) => {
       commit('SET_SELECTED', null)
       commit('SET_HANDLER', null)
-      cleanConnect()
-      cleanSearchHistory()
+      if(cache.indexOf('Search history') > -1) {
+        cleanSearchHistory()
+      }
+      if(cache.indexOf('Connections') > -1) {
+        cleanConnect()
+      }
+
       commit('SET_CONNECT_MAP')
     },
     CloseHandler: ({ commit }) => {

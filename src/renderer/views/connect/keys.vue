@@ -1,56 +1,63 @@
 <template>
-  <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Loading...">
-    <div class="header-container">
-      <el-breadcrumb separator-class="el-icon-arrow-right" style="margin-bottom: 10px;display: inline-block">
-        <el-breadcrumb-item :to="{name: 'DB', params: { name: selectedName }}">{{ selectedName }}</el-breadcrumb-item>
-        <el-breadcrumb-item>{{ 'db'+this.$route.params['db']+'('+dbSize+')' }}</el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
+  <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Scanning..." style="padding-top: 10px;">
+    <el-tabs v-model="activeKey" @edit="handleTabsEdit" type="border-card">
+      <el-tab-pane name="keys" :closable="false">
+        <span slot="label"><i class="el-icon-location"></i> Keys</span>
+        <div class="operation-container">
+          <el-alert v-if="searchTitle"
+                  :title="searchTitle"
+                  type="success" style="margin-bottom: 10px">
+          </el-alert>
+          <el-button class="filter-item" size="mini" type="danger" icon="el-icon-delete" :disabled="!batchStatus" @click="onBatchDeleteKeys">Delete</el-button>
+          <el-button type="primary" size="mini" icon="el-icon-plus" @click="keyFormVisible = true">Create a new key</el-button>
 
-    <el-tabs v-model="activeKey" closable @edit="handleTabsEdit">
-      <el-tab-pane label="Keys" name="keys">
-        <div class="filter-container">
-          <el-autocomplete
-                  class="inline-input"
-                  v-model="listQuery.key"
-                  :fetch-suggestions="querySearch"
-                  placeholder="search for key"
-                  @keyup.enter.native="handleFilter"
-                  size="small"
-                  style="width: 200px;"
-          >
-            <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
-          </el-autocomplete>
-          <el-button-group style="float: right">
-            <el-button type="primary" size="small" icon="el-icon-plus" @click="keyFormVisible = true"></el-button>
-            <el-button class="filter-item" size="small" type="warning" icon="el-icon-refresh" @click="getKeys"></el-button>
-          </el-button-group>
+          <div class="search-container">
+            <el-autocomplete
+                    class="inline-input"
+                    v-model="listQuery.key"
+                    :fetch-suggestions="querySearch"
+                    placeholder="search for key"
+                    @keyup.enter.native="handleFilter"
+                    size="mini"
+            >
+              <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
+            </el-autocomplete>
+          </div>
         </div>
         <template v-if="isShowAllKeys">
-          <div class="search-info" >
-            {{ 'Searched for '+ allKeys.length +' results, time of use '+searchTime+'s' }}
-          </div>
-          <el-table :data="keys" fit highlight-current-row style="margin: 15px 0;clear: both;" size="small">
+          <el-table :data="keys"
+                    fit highlight-current-row
+                    style="margin: 15px 0;clear: both;"
+                    size="small"
+                    @row-contextmenu="onOpenMenu"
+                    @row-dblclick="onShowValueByDblclick"
+                    @selection-change="handleSelectionChange"
+                    :header-cell-style="{background: '#f5f7fa'}"
+          >
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
             <el-table-column label="key">
               <template slot-scope="scope">
-                <el-button type="text" @click="onShowValue(scope.row)">{{scope.row}}</el-button>
+                {{scope.row}}
               </template>
             </el-table-column>
-            <el-table-column label="Operation" width="100">
-              <template slot-scope="scope">
-                <el-button type="text" size="mini" style="color: #F56C6C;" @click="onDeleteKey(scope.row)">Delete</el-button>
-              </template>
-            </el-table-column>
+            <!--<el-table-column label="Operation" width="100">-->
+              <!--<template slot-scope="scope">-->
+                <!--<el-button type="text" size="mini" style="color: #F56C6C;" @click="onDeleteKey(scope.row)">Delete</el-button>-->
+              <!--</template>-->
+            <!--</el-table-column>-->
           </el-table>
 
           <div class="pagination-container">
-            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="total, prev, pager, next, jumper" :total="total">
+            <el-pagination background @current-change="handleCurrentChange" :current-page="listQuery.pageIndex" :page-size="listQuery.pageSize" layout="prev, pager, next" :total="total">
             </el-pagination>
           </div>
         </template>
       </el-tab-pane>
-      <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel()" :name="key" :key="key">
-        <key-tap :one-key="key"></key-tap>
+      <el-tab-pane v-for="(key, index) in selectedKeys" :label="key | getKeyLabel" :name="key" :key="key" closable>
+        <key-tap :one-key="key" @handleTabsEdit="handleTabsEdit"></key-tap>
       </el-tab-pane>
     </el-tabs>
 
@@ -89,7 +96,10 @@
   import {mapGetters} from 'vuex'
   import { KeyTap } from './components'
   import { formatString } from "@/utils"
+  import {remote} from 'electron'
   import { getSearchHistory, addSearchHistory } from '@/utils/localStore'
+  import _ from 'lodash'
+  import Redis from 'ioredis'
 
   export default {
     name: "Keys",
@@ -102,7 +112,21 @@
         'selectedName',
         'autoSearch',
         'autoSearchLimit'
-      ])
+      ]),
+      menu() {
+        const {Menu, MenuItem} = remote
+
+        const menu = new Menu()
+        menu.append(new MenuItem({label: 'Open', click: this.onShowValueByMenu}))
+        menu.append(new MenuItem({type: 'separator'}))
+        menu.append(new MenuItem({label: 'Delete', click: this.onDeleteKeyByMenu}))
+        return menu
+      }
+    },
+    watch: {
+      multipleSelection(val) {
+        this.batchStatus = (val.length > 0)
+      }
     },
     filters: {
       getKeyLabel(key) {
@@ -111,7 +135,6 @@
     },
     mounted() {
       this.searchHistory = getSearchHistory('keys')
-      console.log(this.searchHistory)
     },
     data() {
       let checkJson = (rule, value, callback) => {
@@ -132,18 +155,19 @@
         keys: [],
         allKeys: [],
         selectedKeys: [],
+        selectedKey: null,
         listQuery: {
           key: '',
           count: 10000,
           pageSize: 1000,
           pageIndex: 1
         },
+        multipleSelection: [],
         activeKey: 'keys',
         isShowAllKeys: false,
         loadingKeys: false,
         total: 0,
         dbSize: 0,
-        searchTime: 0,
         keyFormVisible: false,
         keyForm: {
           key: '',
@@ -164,13 +188,15 @@
           'set',
           'list'
         ],
+        batchStatus: false,
+        searchTitle: ''
       }
     },
     async created() {
       const db = this.$route.params['db']
       await this.handler.select(db)
       const dbSize = await this.handler.dbsize()
-      if(this.autoSearch || dbSize < this.autoSearchLimit) {
+      if(this.autoSearch && dbSize < this.autoSearchLimit) {
         await this.getKeys()
       }
       this.dbSize = dbSize
@@ -186,8 +212,10 @@
         const startTime = Math.round(new Date().getTime())
         let allKeys = await this.scan(handler, key, count)
         const endTime = Math.round(new Date().getTime())
-        console.log("scan 所用时间"+ ((endTime-startTime)/1000).toFixed(2))
-        this.searchTime = ((endTime-startTime)/1000).toFixed(2)
+        const searchTime = ((endTime-startTime)/1000).toFixed(2)
+        let searchTitle = key === '*' ? 'Searched for all keys ' : 'Searched for ['+this.listQuery.key+']'
+        searchTitle += ', total '+allKeys.length+', used time '+searchTime+'s.'
+        this.searchTitle = searchTitle
 
         this.total = allKeys.length
         this.allKeys = allKeys
@@ -251,24 +279,33 @@
           if(searchHistory.length >= 5) {
             searchHistory = searchHistory.slice(0, 4)
           }
-          if(!searchHistory.some(v => (v.value === key))) {
-            searchHistory.unshift({value: key})
-            addSearchHistory('keys', searchHistory)
-          }
+          searchHistory = searchHistory.filter(v => (v.value != key))
+          searchHistory.unshift({value: key.toString()})
+          addSearchHistory('keys', searchHistory)
 
           this.searchHistory = searchHistory
         }
       },
       // 获取key的值
-      async onShowValue(key) {
+      onShowValueByMenu() {
+        if(_.isNull(this.selectedKey)) {
+          return
+        }
+
+        this.showValue(this.selectedKey)
+        this.selectedKey = null
+      },
+      showValue(key) {
         this.activeKey = key
         let index = this.selectedKeys.indexOf(key)
-        console.log(index)
         if(index === -1) {
           this.selectedKeys.push(key)
         }else {
           this.$set(this.selectedKeys, index, key)
         }
+      },
+      onShowValueByDblclick(row) {
+        this.showValue(row)
       },
       handleCurrentChange(val) {
         this.loadingKeys = true
@@ -351,11 +388,12 @@
               this.$message.warning(e.message)
               return
             }
-            this.keyFormVisible = false;
+            this.keys.unshift(this.keyForm.key)
+            this.keyFormVisible = false
             this.onClearForm()
             this.$message.success('Created a new key successfully!')
           } else {
-            console.log('error submit!!');
+            console.log('error submit!!')
             return false;
           }
         })
@@ -370,22 +408,72 @@
         let results = queryString ? searchHistory.filter((search) => {
           return (search.value.indexOf(queryString.toLowerCase()) === 0)
         }) : searchHistory;
-        // 调用 callback 返回建议列表的数据
         cb(results);
       },
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+      onOpenMenu(row) {
+        this.selectedKey = row
+        this.menu.popup(remote.getCurrentWindow())
+      },
+      async onDeleteKeyByMenu() {
+        this.$confirm('Are you sure to delete this key?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          if(await this.deleteKey([this.selectedKey])) {
+            this.$message.success('Delete the key successfully!')
+          }
+        })
+      },
+      async onBatchDeleteKeys() {
+        this.$confirm('Are you sure to delete these keys?', 'Warning', {
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(async () => {
+          console.log(this.multipleSelection)
+          if(await this.deleteKey(this.multipleSelection)) {
+            this.$message.success('Delete keys successfully!')
+            this.multipleSelection = []
+          }
+        })
+      },
+      async deleteKey(keys) {
+        if(!_.isArray(keys) || _.isEmpty(keys)) {
+          return false
+        }
+
+        let status = false
+        const handler = this.handler
+        let pipeline = handler.pipeline()
+        keys.forEach((key) => {
+          pipeline.del(key)
+        })
+        await pipeline.exec().then((results) => {
+          let error = _.find(results, (o)=> (o[0] instanceof Redis.ReplyError))
+          console.log(results)
+          if(error) {
+            this.$message.error(error[0].message)
+          }else {
+            keys.forEach((key) => {
+              this.handleTabsEdit(key, 'remove')
+            })
+            this.keys = this.keys.filter((key) => {
+              return keys.indexOf(key) === -1
+            })
+            status = true
+          }
+        })
+
+        return status
+      }
     }
   }
 </script>
 
 <style scoped>
-  .search-info {
-    clear: both;
-    font-size: 12px;
-    color: #909399;
-    margin-top: 10px;
-    /*float: right;*/
-  }
-  .el-form-item--small.el-form-item {
-    margin-bottom: 10px;
-  }
+
 </style>

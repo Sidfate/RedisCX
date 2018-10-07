@@ -1,80 +1,53 @@
 <template>
-  <div>
+  <el-header style="padding: 0;height: 50px;">
     <el-menu class="navbar" mode="horizontal">
-      <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
+      <!--<hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>-->
       <breadcrumb></breadcrumb>
 
-      <div class="avatar-container">
-        <div class="avatar-wrapper">
-          <el-dropdown>
-            <el-button type="text info" icon="el-icon-more" class="btn-setting">
-              <!--<i class="el-icon-arrow-down el-icon&#45;&#45;right"></i>-->
-            </el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item>
-                <router-link :to="{name: 'ConnectNewForm'}">
-                  <el-button type="text primary" icon="el-icon-plus">Connect</el-button>
-                </router-link>
-              </el-dropdown-item>
-              <el-dropdown-item>
-                <el-button type="text" icon="el-icon-setting" @click="settingFormVisible = true">Setting</el-button>
-              </el-dropdown-item>
-              <el-dropdown-item>
-                <el-button type="text" style="color: #E6A23C;" icon="el-icon-refresh" @click="onRestore">Restore</el-button>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-        </div>
+      <div class="header-container">
+        <router-link :to="{path: '/'}">
+          <el-button type="text" class="header-btn" style="margin-right: 10px;"><i class="fa fa-home"></i></el-button>
+        </router-link>
+
+        <el-button type="text" class="header-btn" @click="settingVisible = true">
+          <i class="fa fa-gear"></i>
+        </el-button>
       </div>
     </el-menu>
 
-    <el-dialog title="Setting" :visible.sync="settingFormVisible" :modal-append-to-body="false" width="50%" top="50px">
-      <el-form :model="settingForm"
-               label-position="left"
-               label-width="50%"
-               size="small"
-               :rules="settingFormRules"
-               ref="settingForm"
-      >
-        <el-form-item label="Auto Search">
-          <el-switch v-model="settingForm.autoSearch"></el-switch>
-        </el-form-item>
-        <el-form-item label="Auto Search Limit" >
-          <el-input v-model.number="settingForm.autoSearchLimit" :disabled="!settingForm.autoSearch"></el-input>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="settingFormVisible = false" size="small">Cancel</el-button>
-        <el-button type="primary" @click="onSubmit" size="small">Save</el-button>
-      </div>
+    <el-dialog
+            title="Setting"
+            :visible.sync="settingVisible"
+            :center="true"
+            fullscreen
+    >
+      <setting-modal></setting-modal>
     </el-dialog>
-  </div>
+  </el-header>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
+import SettingModal from './SettingModal'
+import ElHeader from "element-ui/packages/header/src/main";
 
 export default {
   components: {
+    ElHeader,
     Breadcrumb,
-    Hamburger
+    Hamburger,
+    SettingModal
   },
   computed: {
     ...mapGetters([
-      'sidebar',
-      'autoSearch',
-      'autoSearchLimit'
+      'sidebar'
     ])
-  },
-  mounted() {
-    this.settingForm.autoSearch = this.autoSearch
-    this.settingForm.autoSearchLimit = this.autoSearchLimit
   },
   data() {
     return {
-      settingFormVisible: false,
+      settingVisible: false,
       settingForm: {
         autoSearch: null,
         autoSearchLimit: null
@@ -86,33 +59,7 @@ export default {
   },
   methods: {
     toggleSideBar() {
-      this.$store.dispatch('ToggleSideBar')
-    },
-    onRestore() {
-      this.$confirm('Restore will delete all your connect and config, Are you sure to do it?', 'Warning', {
-        confirmButtonText: 'Yes',
-        cancelButtonText: 'Cancel',
-        type: 'warning'
-      }).then(async () => {
-        this.$store.dispatch('CleanAllSetting')
-        this.$router.push({ path: '/dashboard' })
-      })
-    },
-    onSubmit() {
-      const autoSearch = this.settingForm.autoSearch
-      let autoSearchLimit = this.settingForm.autoSearchLimit
-      if(autoSearch) {
-        this.$store.dispatch('EnableAutoSearch')
-        if(!Number.isInteger(autoSearchLimit)) {
-          autoSearchLimit = this.autoSearchLimit
-        }
-        this.$store.dispatch('ChangeAutoSearchLimit', autoSearchLimit)
-      }else {
-        this.$store.dispatch('DisableAutoSearch')
-      }
-
-      this.$message.success('Setting saved!')
-      this.settingFormVisible = false
+      // this.$store.dispatch('ToggleSideBar')
     }
   }
 }
@@ -129,22 +76,16 @@ export default {
     float: left;
     padding: 0 10px;
   }
-  .screenfull {
-    position: absolute;
-    right: 90px;
-    top: 16px;
-    color: red;
-  }
-  .avatar-container {
+  .header-container {
     height: 50px;
     display: inline-block;
     position: absolute;
     right: 15px;
-    .avatar-wrapper {
-      cursor: pointer;
-      position: relative;
-      .btn-setting {
-        font-size: 24px;
+    .header-btn {
+      font-size: 20px;
+      color: #909399;
+      &:hover {
+        color: #409EFF;
       }
     }
   }

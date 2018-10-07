@@ -32,13 +32,13 @@ export default {
   },
   mounted() {
     this.jsonEditor = CodeMirror.fromTextArea(this.$refs.textarea, {
-      lineNumbers: true,
+      lineNumbers: false,
       mode: 'application/json',
       gutters: ['CodeMirror-lint-markers'],
-      theme: 'rubyblue',
+      theme: 'default',
       lint: true
     })
-
+    
     this.jsonEditor.setValue(JSON.stringify(this.value, null, 2))
     this.jsonEditor.on('change', cm => {
       this.$emit('changed', cm.getValue())
@@ -55,17 +55,17 @@ export default {
 
 <style scoped>
 .json-editor{
-  height: 100%;
+  /*height: 100%;*/
   position: relative;
   clear: both;
   margin: 15px 0;
 }
 .json-editor >>> .CodeMirror {
   height: auto;
-  min-height: 300px;
+  min-height: 200px;
 }
 .json-editor >>> .CodeMirror-scroll{
-  min-height: 300px;
+  min-height: 200px;
 }
 .json-editor >>> .cm-s-rubyblue span.cm-string {
   color: #F08047;

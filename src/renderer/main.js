@@ -12,6 +12,7 @@ import locale from 'element-ui/lib/locale/lang/en'
 
 import '@/styles/index.scss' // global css
 import '@/icons' // icon
+import '@/static/font-awesome/css/font-awesome.min.css'
 
 Vue.use(ElementUI, { locale })
 

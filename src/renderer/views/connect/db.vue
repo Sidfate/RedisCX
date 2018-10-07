@@ -193,7 +193,6 @@
               isTop: this.dbAssign[db].isTop,
               count: this.dbAssign[db].count
             }
-            console.log(this.dbAssign[db].isTop)
             if(this.dbAssign[db].isTop) {
               dbList.unshift(data)
               console.log(dbList)
@@ -204,7 +203,7 @@
         })
 
         if (this.listQuery.number) {
-          dbList = dbList.filter((v, i) => (i === parseInt(this.listQuery.number)))
+          dbList = dbList.filter((v, i) => (v.db === parseInt(this.listQuery.number) || v.tags.indexOf(this.listQuery.number) >= 0))
         }
         this.dbList = dbList
         this.loadingDbs = false
@@ -227,8 +226,8 @@
       },
       async onFilter() {
         await this.getDbs()
-        const number = parseInt(this.listQuery.number)
-        if(!isNaN(number)) {
+        const number = this.listQuery.number
+        if(!_.isEmpty(number)) {
           let searchHistory = this.searchHistory
 
           if(searchHistory.length >= 5) {

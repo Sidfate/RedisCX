@@ -1,10 +1,25 @@
-# RedisCX
 
-test page
+<img src="https://i.loli.net/2018/10/07/5bb9b12f0fd7e.png" width="128px">
 
-![logo](https://i.loli.net/2018/07/10/5b447752b3020.png)
+### Introduction
 
-> Redis client for any platform.
+When you search for a redis client tool in github, there are already some tools like `Redis Desktop Manager`, `Medis` and so on.But as the moment I use this tools, there are some troubles in searching key in large-size db, crude ui and inhuman operation.So I make my redis client tool, and hope you enjoy using it! 
+
+### Platform
+* MacOS
+* Windows
+
+### Downloads
+
+[Click Me](https://github.com/Sidfate/redisCX/releases)
+
+### Snapshots
+
+![1](https://i.loli.net/2018/08/29/5b864a207a78b.png)
+
+![2](https://i.loli.net/2018/08/29/5b864a207c70d.png)
+
+![3](https://i.loli.net/2018/08/29/5b864a207e6ed.png)
 
 ### Feature
 
@@ -16,17 +31,6 @@ test page
 * More lighter UI and simpler operation.
 * ...
 
-### Downloads
-
-[Download Link](https://github.com/Sidfate/redisCX/releases)
-
-### Snapshots
-
-![1](https://i.loli.net/2018/08/29/5b864a207a78b.png)
-
-![2](https://i.loli.net/2018/08/29/5b864a207c70d.png)
-
-![3](https://i.loli.net/2018/08/29/5b864a207e6ed.png)
 
 ### Development
 
@@ -44,6 +48,15 @@ npm run build
 
 ---
 
+
+
 ### License
 
 MIT
+
+
+### Donate
+If you find this software useful and would like to support it, you can do so simply by scanning my Alipay two-dimension code and donating whatever you like.
+
+<img src="https://i.loli.net/2018/10/07/5bb9b89685c8f.png" width="128px">
+

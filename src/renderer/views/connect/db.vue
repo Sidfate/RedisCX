@@ -345,11 +345,11 @@
 
         })
       },
-      handleCloseTag(db, tag) {
+      handleCloseTag(db, index, tag) {
         this.dbAssign[db].tags.splice(this.dbAssign[db].tags.indexOf(tag), 1)
 
         setDbAssign(this.selectedName, this.dbAssign)
-        this.dbList[db].tags = this.dbAssign[db].tags
+        // this.dbList[db].tags = this.dbAssign[db].tags
       },
       onSetTop() {
         console.log(this.dbAssign[this.selectedDb].isTop)

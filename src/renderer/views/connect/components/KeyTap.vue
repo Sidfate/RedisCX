@@ -316,7 +316,12 @@
           inputPattern: /[0-9]+/,
           inputErrorMessage: 'Invalid ttl'
         }).then(async ({ value }) => {
-          await this.handler.expire(this.item.key, parseInt(value))
+          const time = parseInt(value)
+          if(time > 0) {
+            await this.handler.expire(this.item.key, time)
+          }else {
+            await this.handler.persist(this.item.key)
+          }
           await this.getValue()
         }).catch(() => {
 

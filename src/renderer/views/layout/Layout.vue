@@ -1,11 +1,17 @@
 <template>
-  <el-container style="height: 100%;">
-    <sidebar class="sidebar-container"></sidebar>
-    <el-container class="is-vertical">
-      <navbar></navbar>
+  <!--<el-container style="height: 100%;">-->
+    <!--<sidebar class="sidebar-container"></sidebar>-->
+    <!--<el-container class="is-vertical">-->
+      <!--<navbar></navbar>-->
+      <!--<app-main></app-main>-->
+    <!--</el-container>-->
+  <!--</el-container>-->
+  <div class="window">
+    <div class="window-content">
+      <sidebar class="sidebar-container"></sidebar>
       <app-main></app-main>
-    </el-container>
-  </el-container>
+    </div>
+  </div>
 </template>
 
 <script>

@@ -1,18 +1,10 @@
 <template>
-  <el-aside width="180px">
-      <el-menu
-        mode="vertical"
-        :default-active="selectedName"
-        :collapse="isCollapse"
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
-        collapse-transition
-        style="height: 100%;"
-      >
-        <sidebar-item></sidebar-item>
-      </el-menu>
-  </el-aside>
+  <div class="pane-group">
+    <div class="pane-sm sidebar">...</div>
+    <div class="pane">
+      <sidebar-item></sidebar-item>
+    </div>
+  </div>
 </template>
 
 <script>

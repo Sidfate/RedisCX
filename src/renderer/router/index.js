@@ -23,6 +23,7 @@ import Layout from '../views/layout/Layout'
 **/
 export const constantRouterMap = [
 
+
   {
     path: '/',
     component: Layout,
@@ -31,7 +32,7 @@ export const constantRouterMap = [
     hidden: true,
     children: [{
       path: 'dashboard',
-      component: () => import('@/views/dashboard/index')
+      component: () => import('@/views/dashboard/test')
     }]
   },
 

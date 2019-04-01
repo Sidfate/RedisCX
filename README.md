@@ -1,4 +1,4 @@
-# RedisCX
+# RedisCX   [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 
 ![logo](https://i.loli.net/2018/07/10/5b447752b3020.png) 
 

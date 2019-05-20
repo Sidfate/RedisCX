@@ -7,8 +7,8 @@ When you search for a redis client tool in github, there are already some tools 
 
 ### Platform
 * MacOS
-* Windows
-
+* Windows 
+* Linux 
 ### Downloads
 
 [Click Me](https://github.com/Sidfate/redisCX/releases)

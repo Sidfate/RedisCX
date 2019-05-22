@@ -6,6 +6,8 @@
 
 > Redis client for any platform.
 
+See more about [Client-X-Series](https://clientx.dev/)
+
 ### Feature
 
 **What's important!**

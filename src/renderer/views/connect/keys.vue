@@ -209,6 +209,7 @@
     },
     methods: {
       async getKeys() {
+        this.keys = []
         this.loadingKeys = true
         const handler = this.handler
         let key = this.listQuery.key

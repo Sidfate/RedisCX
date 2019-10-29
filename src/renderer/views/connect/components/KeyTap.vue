@@ -1,10 +1,10 @@
 <template>
   <div class="tap-container" v-loading.body="loadingValue" element-loading-text="Loading...">
     <div class="info-container">
-      <div class="info-title">Base info</div>
+<!--      <div class="info-title">Base info</div>-->
       <div class="info-main">
-        <div class="text item">
-          <h2 class="info-item-title" >KEY</h2>
+        <div class="text item" style="margin-top: 0">
+          <h2 class="info-item-title" style="margin-top: 0">KEY</h2>
           <el-tooltip class="item" effect="dark" :content="item.key" placement="top-start">
             <div class="info-item-content">{{ item.key | getKeyLabel }}</div>
           </el-tooltip>
@@ -345,7 +345,6 @@
     .info-title {
       font-weight: 700;
       font-size: 16px;
-      border-bottom: 1px solid #eee;
     }
     .info-item-title {
       font-weight: 700;

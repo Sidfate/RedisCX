@@ -2,7 +2,7 @@
   <div class="app-container" v-loading.body="loadingKeys" element-loading-text="Scanning..." style="padding-top: 10px;">
     <el-tabs v-model="activeKey" @edit="handleTabsEdit" type="border-card">
       <el-tab-pane name="keys" :closable="false">
-        <span slot="label"><i class="el-icon-location"></i> Keys</span>
+        <span slot="label"><i class="el-icon-loca tion"></i> Keys</span>
         <div class="operation-container">
           <el-alert v-if="searchTitle"
                   :title="searchTitle"
@@ -20,6 +20,11 @@
                     @keyup.enter.native="handleFilter"
                     size="mini"
             >
+              <template slot="prepend">
+                <el-tooltip class="item" effect="dark" content="Turn On To Search The Intact Key" placement="top-start">
+                  <el-button size="mini" icon="fa fa-bolt" :class="{ 'flash-search-active': isFlashSearch }" @click="isFlashSearch = !isFlashSearch"></el-button>
+                </el-tooltip>
+              </template>
               <el-button slot="append" icon="el-icon-search" @click="handleFilter"></el-button>
             </el-autocomplete>
           </div>
@@ -149,9 +154,10 @@
         }
         callback()
       }
-      
+
       return {
         searchHistory: [],
+        isFlashSearch: false,
         keys: [],
         allKeys: [],
         selectedKeys: [],
@@ -205,12 +211,21 @@
       async getKeys() {
         this.loadingKeys = true
         const handler = this.handler
-        let key = this.listQuery.key ? '*' + this.listQuery.key + '*' : '*'
-        const count = this.listQuery.count
-
-        const dbSize = await this.handler.dbsize()
+        let key = this.listQuery.key
+        let count = 1
+        let allKeys = []
         const startTime = Math.round(new Date().getTime())
-        let allKeys = await this.scan(handler, key, count)
+
+        if(this.isFlashSearch) {
+          const isExist = await handler.exists(key)
+          if(isExist) {
+            allKeys.push(key)
+          }
+        }else {
+          key = this.listQuery.key ? '*' + this.listQuery.key + '*' : '*'
+          count = this.listQuery.count
+          allKeys = await this.scan(handler, key, count)
+        }
         const endTime = Math.round(new Date().getTime())
         const searchTime = ((endTime-startTime)/1000).toFixed(2)
         let searchTitle = key === '*' ? 'Searched for all keys ' : 'Searched for ['+this.listQuery.key+']'
@@ -219,6 +234,7 @@
 
         this.total = allKeys.length
         this.allKeys = allKeys
+        const dbSize = await this.handler.dbsize()
         this.dbSize = dbSize
         this.keysPage()
 
@@ -475,5 +491,7 @@
 </script>
 
 <style scoped>
-
+  .flash-search-active {
+    color: #E6A23C !important;
+  }
 </style>
